@@ -641,7 +641,7 @@ void fs_create(char* path, bool is_dir) {
 
 	if (n_slashes > 0 && n_slashes <= MAX_FILESYSTEM_DEPTH) {
 		// Copy the new name beforehand, or strtok will mess with it:
-		new_name = malloc(strlen(last_slash));
+		new_name = malloc_or_die(strlen(last_slash));
 		new_name = strcpy(new_name, last_slash + 1);
 		// Get the hash table cell which will hold the new file:
 		new_file = fs__get(path, &parent, true);
