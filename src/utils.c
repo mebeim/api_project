@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 inline void* malloc_or_die(const size_t sz) {
 	void* mem;
 

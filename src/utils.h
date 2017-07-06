@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #ifndef API_PROJECT_UTILS_INCLUDED
 #define API_PROJECT_UTILS_INCLUDED
 
