@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <bool.h>
+#include <stdbool.h>
 #include "utils.h"
 #include "filesystem_core.h"
 #include "filesystem_api.h"
