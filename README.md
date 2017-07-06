@@ -10,6 +10,8 @@ The entire project has been split into different header and source files for cla
 
 The project assignment and description can be found in the `doc` folder, along with a simple description of the data structure used. The project assignment PDF which describes the program in detail is in italian.
 
+Source and header files contain explicative comments for every defined function, and more comments explaining each algorithm almost step by step can be found in the complete source file `src/full_project.c`.
+
 ## Building
 
 Work in progress...
