@@ -3,9 +3,9 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define READ_BUFFER_CHUNK_SIZE 128
-#define MAX_FILESYSTEM_DEPTH   255
-#define MAX_DIRECTORY_CHILDREN 1024
+#define GETDELIMS_BUFFER_CHUNK_SIZE 128
+#define MAX_FILESYSTEM_DEPTH        255
+#define MAX_DIRECTORY_CHILDREN      1024
 
 #define RESULT_SUCCESS      "ok"
 #define RESULT_READ_SUCCESS "contenuto"
@@ -106,7 +106,7 @@ int main(void) {
 			free(line);
 			continue;
 		}
-			
+
 		if (chars_read == -1) {
 			free(line);
 			break;
@@ -144,7 +144,7 @@ int main(void) {
 
 		free(line);
 	}
-	
+
 	fs__del(&fs_root);
 
 	return 0;
@@ -205,7 +205,7 @@ static inline void* malloc_null(size_t n, size_t sz) {
 		for (i = 0; i < n; i++)
 			mem[i] = NULL;
 	}
-	
+
 	return mem;
 }
 
@@ -223,7 +223,7 @@ int getdelims(char** restrict str, const char* delims, FILE* restrict stream) {
 	char* cur;
 
 	str_len  = 0;
-	str_size = READ_BUFFER_CHUNK_SIZE + 1;
+	str_size = GETDELIMS_BUFFER_CHUNK_SIZE + 1;
 	*str     = malloc_or_die(str_size);
 	cur      = *str;
 
@@ -231,7 +231,7 @@ int getdelims(char** restrict str, const char* delims, FILE* restrict stream) {
 		c = getc(stream);
 
 		if (str_len == str_size) {
-			str_size += READ_BUFFER_CHUNK_SIZE;
+			str_size += GETDELIMS_BUFFER_CHUNK_SIZE;
 			*str      = realloc_or_die(*str, str_size);
 			cur       = *str + str_len;
 		}
@@ -326,14 +326,14 @@ int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool ne
  */
 void rehash_all(fs_file_t* cur) {
 	fs_file_t* child;
-	
+
 	if (cur->parent != NULL) {
 		// Rehash the current file and put it back in the table:
 		cur->hash = (cur->parent->hash + djb2(cur->name)) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
-	
+
 	if (cur->is_dir) {
 		// Rehash all the children:
 		child = cur->content.l_child;
