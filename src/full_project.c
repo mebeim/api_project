@@ -1,3 +1,15 @@
+/**
+ * Subject: Final test project
+ * Author : Marco Bonelli
+ * Date   : 2017-07-05
+ * Course : Algorithms and principles of computer science [ID:086067]
+ * A.Y.   : 2016/2017
+ *
+ * (c) Marco Bonelli 2017
+ * https://github.com/mebeim/api_project
+ * ... license info ...
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
