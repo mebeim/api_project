@@ -21,7 +21,7 @@ int main(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new("#", true, NULL);
+	fs_root        = fs__new(NULL, true, NULL);
 	done           = false;
 
 	while (!done) {
