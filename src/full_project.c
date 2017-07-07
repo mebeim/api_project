@@ -82,6 +82,7 @@ void fs_delete (char*, bool);
 void fs_read   (char*);
 void fs_write  (char*, const char*);
 void fs_find   (const char*);
+void fs_exit   (void);
 
 /****************************************************
  *                 GLOBAL VARIABLES                 *
@@ -90,6 +91,7 @@ void fs_find   (const char*);
 fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
 size_t     const FS_ROOT_HASH      = 0;
+char*      const FS_ROOT_NAME      = "#";
 
 fs_file_t** fs_table;
 fs_file_t*  fs_root;
@@ -108,7 +110,7 @@ int main(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new("#", true, NULL);
+	fs_root        = fs__new(NULL, true, NULL);
 	done           = false;
 
 	while (!done) {
@@ -151,13 +153,12 @@ int main(void) {
 
 			case COMMAND_EXIT:
 				done = true;
+				fs_exit();
 				break;
 		}
 
 		free(line);
 	}
-
-	fs__del(&fs_root);
 
 	return 0;
 }
@@ -382,13 +383,12 @@ void expand_table(void) {
  */
 fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
-	
+
 	// Before creating a new file, expand the hash table if the maximum load coefficent has been exceeded:
 	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
 		expand_table();
 
 	new             = malloc_or_die(sizeof(fs_file_t));
-	new->name       = name;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
 	new->parent     = parent;
@@ -400,8 +400,10 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 
 	// If we are creating the root:
 	if (parent == NULL) {
-		// Its hash defaults to FS_ROOT_HASH:
+		// Its hash is FS_ROOT_HASH:
 		new->hash      = FS_ROOT_HASH;
+		// Its name is FS_ROOT_NAME
+		new->name      = FS_ROOT_NAME;
 		// And it hasn't got siblings.
 		new->l_sibling = NULL;
 		new->r_sibling = NULL;
@@ -409,7 +411,9 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		// Otherwise calculate the new file's hash:
 		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
-		// And insert it in the head of the list of children of its parent:
+		// Use the provided name as the new file's name:
+		new->name      = name;
+		// And insert the new file in the head of the list of children of its parent:
 		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
@@ -648,7 +652,7 @@ void fs_create(char* path, bool is_dir) {
 	n_slashes  = 0;
 
 	// Check the number of slashes and save the position of the last one to get the new file's name:
-	while (*p && n_slashes <= MAX_FILESYSTEM_DEPTH) {
+	while (*p) {
 		if (*p == '/') {
 			last_slash = p;
 			n_slashes++;
@@ -657,7 +661,7 @@ void fs_create(char* path, bool is_dir) {
 		p++;
 	}
 
-	if (n_slashes > 0 && n_slashes <= MAX_FILESYSTEM_DEPTH) {
+	if (n_slashes > 0 && n_slashes < MAX_FILESYSTEM_DEPTH) {
 		// Copy the new name beforehand, or strtok will mess with it:
 		new_name = malloc_or_die(strlen(last_slash));
 		new_name = strcpy(new_name, last_slash + 1);
@@ -795,4 +799,16 @@ void fs_find(const char* name) {
 	}
 
 	printf(RESULT_FAILURE"\n");
+}
+
+/**
+ * Destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs_exit(void) {
+	while (fs_root->content.l_child != NULL)
+		fs__del(&fs_root->content.l_child);
+	
+	free(fs_root);
+	free(fs_table);
 }
