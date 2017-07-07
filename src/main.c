@@ -64,13 +64,12 @@ int main(void) {
 
 			case COMMAND_EXIT:
 				done = true;
+				fs_exit();
 				break;
 		}
 
 		free(line);
 	}
-
-	fs__del(&fs_root);
 
 	return 0;
 }
