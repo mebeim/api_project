@@ -15,7 +15,7 @@ void fs_create(char* path, bool is_dir) {
 	last_slash = NULL;
 	n_slashes  = 0;
 
-	while (*p && n_slashes <= MAX_FILESYSTEM_DEPTH) {
+	while (*p && n_slashes) {
 		if (*p == '/') {
 			last_slash = p;
 			n_slashes++;
@@ -24,7 +24,7 @@ void fs_create(char* path, bool is_dir) {
 		p++;
 	}
 
-	if (n_slashes > 0 && n_slashes <= MAX_FILESYSTEM_DEPTH) {
+	if (n_slashes > 0 && n_slashes < MAX_FILESYSTEM_DEPTH) {
 		new_name = malloc_or_die(strlen(last_slash));
 		new_name = strcpy(new_name, last_slash + 1);
 		new_file = fs__get(path, &parent, true);
@@ -122,4 +122,12 @@ void fs_find(const char* name) {
 	}
 
 	printf(RESULT_FAILURE"\n");
+}
+
+void fs_exit(void) {
+	while (fs_root->content.l_child != NULL)
+		fs__del(&fs_root->content.l_child);
+	
+	free(fs_root);
+	free(fs_table);
 }

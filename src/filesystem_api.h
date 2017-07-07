@@ -46,4 +46,10 @@ void fs_write(char*, const char*);
  */
 void fs_find(const char*);
 
+/**
+ * Destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs_exit(void);
+
 #endif
