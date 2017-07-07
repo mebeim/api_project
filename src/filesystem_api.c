@@ -15,7 +15,7 @@ void fs_create(char* path, bool is_dir) {
 	last_slash = NULL;
 	n_slashes  = 0;
 
-	while (*p && n_slashes) {
+	while (*p) {
 		if (*p == '/') {
 			last_slash = p;
 			n_slashes++;
