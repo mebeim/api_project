@@ -111,6 +111,7 @@ static void expand_table(void) {
 fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
 size_t     const FS_ROOT_HASH      = 0;
+char*      const FS_ROOT_NAME      = "#";
 
 fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
@@ -119,7 +120,6 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		expand_table();
 
 	new             = malloc_or_die(sizeof(fs_file_t));
-	new->name       = name;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
 	new->parent     = parent;
@@ -128,14 +128,16 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->content.l_child = NULL;
 	else
 		new->content.data = calloc_or_die(1, sizeof(char));
-	
+
 	if (parent == NULL) {
 		new->hash      = FS_ROOT_HASH;
+		new->name      = FS_ROOT_NAME;
 		new->l_sibling = NULL;
 		new->r_sibling = NULL;
 	} else {
 		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
+		new->name      = name;
 		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
