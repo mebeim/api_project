@@ -69,7 +69,7 @@ void          rehash_all   (fs_file_t*);
 void          expand_table (void);
 
 /* Filesystem helpers */
-fs_file_t*  fs__new(size_t, char*, bool, fs_file_t*);
+fs_file_t*  fs__new(char*, bool, fs_file_t*);
 fs_file_t** fs__get(char*, fs_file_t**, bool);
 fs_file_t** fs__all(fs_file_t*, const char*, size_t*);
 char*       fs__uri(fs_file_t*, size_t);
@@ -108,7 +108,7 @@ int main(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new(FS_ROOT_HASH, "#", true, NULL);
+	fs_root        = fs__new("#", true, NULL);
 	done           = false;
 
 	while (!done) {
@@ -373,7 +373,6 @@ void expand_table(void) {
 
 /**
  * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
- * @param hash  : the hash of the new file.
  * @param name  : the name of the new file.
  * @param is_dir: whether the new file is a directory or not.
  * @param parent: a pointer to the new file's parent.
@@ -381,11 +380,10 @@ void expand_table(void) {
  * @pre   all the checks before the creation have already been made.
  * @post  the new file is now the head of the list of children starting at parent->content.l_child.
  */
-fs_file_t* fs__new(size_t hash, char* name, bool is_dir, fs_file_t* parent) {
+fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
 	new             = malloc_or_die(sizeof(fs_file_t));
-	new->hash       = hash;
 	new->name       = name;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
@@ -396,9 +394,18 @@ fs_file_t* fs__new(size_t hash, char* name, bool is_dir, fs_file_t* parent) {
 	else
 		new->content.data = calloc_or_die(1, sizeof(char));
 
-	// If a parent is provided (i.e. the file to be created is not the root):
-	if (parent != NULL) {
-		// Insert the new file in the head of the list of children of its parent:
+	// If we are creating the root:
+	if (parent == NULL) {
+		// Its hash defaults to FS_ROOT_HASH:
+		new->hash      = FS_ROOT_HASH;
+		// And it hasn't got siblings.
+		new->l_sibling = NULL;
+		new->r_sibling = NULL;
+	} else {
+		// Otherwise calculate the new file's hash:
+		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
+		new->hash      = linear_probe(new->hash, name, parent, true);
+		// And insert it in the head of the list of children of its parent:
 		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
@@ -406,10 +413,6 @@ fs_file_t* fs__new(size_t hash, char* name, bool is_dir, fs_file_t* parent) {
 
 		parent->content.l_child = new;
 		parent->n_children++;
-	} else {
-		// Otherwise we're creating the root, and it hasn't got siblings.
-		new->l_sibling = NULL;
-		new->r_sibling = NULL;
 	}
 
 	return new;
@@ -635,7 +638,6 @@ void fs_create(char* path, bool is_dir) {
 	fs_file_t* parent;
 	char *p, *last_slash, *new_name;
 	unsigned short n_slashes;
-	int new_hash;
 
 	p          = path;
 	last_slash = NULL;
@@ -660,10 +662,8 @@ void fs_create(char* path, bool is_dir) {
 
 		// If the position is valid:
 		if (new_file != NULL) {
-			// Calculate the new file's hash and create it:
-			new_hash  = (parent->hash + djb2(new_name)) % fs_table_size;
-			new_hash  = linear_probe(new_hash, new_name, parent, true);
-			*new_file = fs__new(new_hash, new_name, is_dir, parent);
+			// Create the new file:
+			*new_file = fs__new(new_name, is_dir, parent);
 			fs_table_files++;
 
 			// Expand the hash table if the maximum load coefficent has been exceeded:
