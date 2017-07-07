@@ -382,6 +382,10 @@ void expand_table(void) {
  */
 fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
+	
+	// Before creating a new file, expand the hash table if the maximum load coefficent has been exceeded:
+	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
+		expand_table();
 
 	new             = malloc_or_die(sizeof(fs_file_t));
 	new->name       = name;
@@ -665,10 +669,6 @@ void fs_create(char* path, bool is_dir) {
 			// Create the new file:
 			*new_file = fs__new(new_name, is_dir, parent);
 			fs_table_files++;
-
-			// Expand the hash table if the maximum load coefficent has been exceeded:
-			if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
-				expand_table();
 
 			printf(RESULT_SUCCESS"\n");
 			return;
