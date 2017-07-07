@@ -2,7 +2,7 @@
 #include <string.h>
 #include "utils.h"
 
-extern inline void* malloc_or_die(const size_t sz) {
+void* malloc_or_die(const size_t sz) {
 	void* mem;
 
 	mem = malloc(sz);
@@ -12,7 +12,7 @@ extern inline void* malloc_or_die(const size_t sz) {
 	return mem;
 }
 
-extern inline void* calloc_or_die(size_t n, size_t sz) {
+void* calloc_or_die(size_t n, size_t sz) {
 	void* mem;
 
 	mem = calloc(n, sz);
@@ -22,7 +22,7 @@ extern inline void* calloc_or_die(size_t n, size_t sz) {
 	return mem;
 }
 
-extern inline void* realloc_or_die(void* mem, size_t sz) {
+void* realloc_or_die(void* mem, size_t sz) {
 	mem = realloc(mem, sz);
 	if (mem == NULL)
 		exit(1);
@@ -30,7 +30,7 @@ extern inline void* realloc_or_die(void* mem, size_t sz) {
 	return mem;
 }
 
-extern inline void* malloc_null(size_t n, size_t sz) {
+void* malloc_null(size_t n, size_t sz) {
 	void** mem;
 	size_t i;
 

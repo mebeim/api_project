@@ -8,22 +8,22 @@
 /**
  * Wrapper of malloc which forces the program to exit in case of failure.
  */
-extern inline void* malloc_or_die(size_t);
+void* malloc_or_die(size_t);
 
 /**
  * Wrapper of calloc which forces the program to exit in case of failure.
  */
-extern inline void* calloc_or_die(size_t, size_t);
+void* calloc_or_die(size_t, size_t);
 
 /**
  * Wrapper of realloc which forces the program to exit in case of failure.
  */
-extern inline void* realloc_or_die(void*, size_t);
+void* realloc_or_die(void*, size_t);
 
 /**
  * Wrapper of malloc_or_die/calloc_or_die which allocates an array of NULL pointers.
  */
-extern inline void* malloc_null(size_t, size_t);
+void* malloc_null(size_t, size_t);
 
 /**
  * Read from the provided stream into the provided string variable until any delimiter or EOF is found, dynamically allocating the needed memory.
