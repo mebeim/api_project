@@ -6,8 +6,8 @@
  * A.Y.   : 2016/2017
  *
  * (c) Marco Bonelli 2017
+ * Licensed under the Apache License 2.0. 
  * https://github.com/mebeim/api_project
- * ... license info ...
  */
 
 #include <stdio.h>
