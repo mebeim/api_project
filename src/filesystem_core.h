@@ -4,33 +4,34 @@
 #define MAX_FILESYSTEM_DEPTH 255
 #define MAX_DIRECTORY_CHILDREN 1024
 
-/**
- * Hash the string provided as key (adapted from the djb2 hash function by Dan Bernstein).
- * @param key: the string to be hashed.
- * @ret   the computed hash.
- */
-unsigned long djb2(const char*);
+typedef union  fs_file_content_u fs_file_content_t;
+typedef struct fs_file_s         fs_file_t;
 
-/**
- * Scan the table from a start index until a valid cell is found.
- * @param start : starting index.
- * @param key   : file name to match which was used as key to produce the initial hash.
- * @param parent: file parent to match.
- * @param new   : whether to search for a new (empty) cell or an existing file.
- * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + djb2(key)) % fs_table_size.
- */
-int linear_probe(size_t, const char*, const fs_file_t*, bool);
+union fs_file_content_u {
+	fs_file_t* l_child;
+	char* data;
+};
 
-/**
- * Destroy the table and allocate a new one with double size, rehashing all the files.
- * @post fs_table_t is double its previous size and contains all the files, fs_table_size contains the new size.
- */
-void expand_table(void);
+struct fs_file_s {
+	size_t hash;
+	char* name;
+	bool is_dir;
+	unsigned short n_children;
+	fs_file_content_t content;
+	fs_file_t *parent, *l_sibling, *r_sibling;
+};
+
+fs_file_t* const FS_DELETED;
+float      const FS_TABLE_MAX_LOAD;
+size_t     const FS_ROOT_HASH;
+
+fs_file_t** fs_table;
+fs_file_t*  fs_root;
+unsigned    fs_table_files;
+size_t      fs_table_size;
 
 /**
  * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
- * @param hash  : the hash of the new file.
  * @param name  : the name of the new file.
  * @param is_dir: whether the new file is a directory or not.
  * @param parent: a pointer to the new file's parent.
@@ -38,7 +39,7 @@ void expand_table(void);
  * @pre   all the checks before the creation have already been made.
  * @post  the new file is now the head of the list of children starting at parent->content.l_child.
  */
-fs_file_t* fs__new(size_t, char*, bool, fs_file_t*);
+fs_file_t* fs__new(char*, bool, fs_file_t*);
 
 /**
  * Browse the filesystem following the path and return a pointer to the table cell identified by the path.

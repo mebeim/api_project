@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include "utils.h"
@@ -8,22 +9,116 @@
  ***********************/
 
 /**
+ * Hash the string provided as key (adapted from the djb2 hash function by Dan Bernstein).
+ * @param key: the string to be hashed.
+ * @ret   the computed hash.
+ */
+static unsigned long djb2(const char* key) {
+	unsigned char* k;
+	unsigned long h;
+	int c;
+
+	h = 5381;
+	k = (unsigned char*)key;
+
+	while ((c = *k++))
+		h = (h << 5) + h + c;
+
+	return h;
+}
+
+/**
+ * Scan the table from a start index until a valid cell is found.
+ * @param start : starting index.
+ * @param key   : file name to match which was used as key to produce the initial hash.
+ * @param parent: file parent to match.
+ * @param new   : whether to search for a new (empty) cell or an existing file.
+ * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
+ * @pre   start has been created as start = (parent->hash + djb2(key)) % fs_table_size.
+ */
+static int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
+	register size_t h;
+
+	h = start;
+
+	if (new) {
+		// While the cell isn't empty:
+		while (fs_table[h] != NULL && fs_table[h] != FS_DELETED) {
+			// If both name and parent of the file in the current cell match the given ones:
+			if (fs_table[h]->parent == parent && strcmp(fs_table[h]->name, key) == 0)
+				// Then the file we want to create already exists.
+				return -1;
+			// Otherwise keep going on:
+			h = (h + 1) % fs_table_size;
+		}
+	} else {
+		// While the cell is not empty and it's either a tombstone or the name or parent don't match the given ones:
+		while (fs_table[h] != NULL && (fs_table[h] == FS_DELETED || fs_table[h]->parent != parent || strcmp(fs_table[h]->name, key) != 0))
+			// Keep going on:
+			h = (h + 1) % fs_table_size;
+
+		// If we stopped because the cell is empty:
+		if (fs_table[h] == NULL)
+			// Then the file we're looking for doesn't exist.
+			return -1;
+	}
+
+	// If none of the above return statements executed, we found the right cell.
+	return (int)h;
+}
+
+/**
  * Rehash the files starting from cur and exploring the tree recursively.
  * @param cur: pointer to the file to rehash.
  * @pre   cur is a valid file pointer (not NULL) which was already properly removed from the table.
  * @post  cur->hash is the new hash and new position in the table.
  */
-static void rehash_all(fs_file_t*);
+static void rehash_all(fs_file_t* cur) {
+	fs_file_t* child;
+
+	if (cur->parent != NULL) {
+		// Rehash the current file and put it back in the table:
+		cur->hash = (cur->parent->hash + djb2(cur->name)) % fs_table_size;
+		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
+		fs_table[cur->hash] = cur;
+	}
+
+	if (cur->is_dir) {
+		// Rehash all the children:
+		child = cur->content.l_child;
+		while (child != NULL) {
+			rehash_all(child);
+			child = child->r_sibling;
+		}
+	}
+}
+
+/**
+ * Destroy the table and allocate a new one with double size, rehashing all the files.
+ * @post fs_table_t is double its previous size and contains all the files, fs_table_size contains the new size.
+ */
+static void expand_table(void) {
+	free(fs_table);
+	fs_table_size *= 2;
+	fs_table = malloc_null(fs_table_size, sizeof(fs_file_t*));
+	rehash_all(fs_root);
+}
 
 /**********************
  **      PUBLIC      **
  **********************/
 
-fs_file_t* fs__new(size_t hash, char* name, bool is_dir, fs_file_t* parent) {
+fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
+float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
+size_t     const FS_ROOT_HASH      = 0;
+
+fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
+	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
+		expand_table();
+
 	new             = malloc_or_die(sizeof(fs_file_t));
-	new->hash       = hash;
 	new->name       = name;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
@@ -33,8 +128,14 @@ fs_file_t* fs__new(size_t hash, char* name, bool is_dir, fs_file_t* parent) {
 		new->content.l_child = NULL;
 	else
 		new->content.data = calloc_or_die(1, sizeof(char));
-
-	if (parent != NULL) {
+	
+	if (parent == NULL) {
+		new->hash      = FS_ROOT_HASH;
+		new->l_sibling = NULL;
+		new->r_sibling = NULL;
+	} else {
+		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
+		new->hash      = linear_probe(new->hash, name, parent, true);
 		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
@@ -42,9 +143,6 @@ fs_file_t* fs__new(size_t hash, char* name, bool is_dir, fs_file_t* parent) {
 
 		parent->content.l_child = new;
 		parent->n_children++;
-	} else {
-		new->l_sibling = NULL;
-		new->r_sibling = NULL;
 	}
 
 	return new;

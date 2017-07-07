@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include "utils.h"
@@ -9,7 +10,6 @@ void fs_create(char* path, bool is_dir) {
 	fs_file_t* parent;
 	char *p, *last_slash, *new_name;
 	unsigned short n_slashes;
-	int new_hash;
 
 	p          = path;
 	last_slash = NULL;
@@ -30,14 +30,9 @@ void fs_create(char* path, bool is_dir) {
 		new_file = fs__get(path, &parent, true);
 
 		if (new_file != NULL) {
-			new_hash  = (parent->hash + djb2(new_name)) % fs_table_size;
-			new_hash  = linear_probe(new_hash, new_name, parent, true);
-			*new_file = fs__new(new_hash, new_name, is_dir, parent);
+			*new_file = fs__new(new_name, is_dir, parent);
 			fs_table_files++;
-
-			if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
-				expand_table();
-
+			
 			printf(RESULT_SUCCESS"\n");
 			return;
 		}

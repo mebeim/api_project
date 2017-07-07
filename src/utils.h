@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #ifndef API_PROJECT_UTILS_INCLUDED
 #define API_PROJECT_UTILS_INCLUDED
 
@@ -6,22 +8,22 @@
 /**
  * Wrapper of malloc which forces the program to exit in case of failure.
  */
-inline void* malloc_or_die(size_t);
+extern inline void* malloc_or_die(size_t);
 
 /**
  * Wrapper of calloc which forces the program to exit in case of failure.
  */
-inline void* calloc_or_die(size_t, size_t);
+extern inline void* calloc_or_die(size_t, size_t);
 
 /**
  * Wrapper of realloc which forces the program to exit in case of failure.
  */
-inline void* realloc_or_die(void*, size_t);
+extern inline void* realloc_or_die(void*, size_t);
 
 /**
  * Wrapper of malloc_or_die/calloc_or_die which allocates an array of NULL pointers.
  */
-inline void* malloc_null(size_t, size_t);
+extern inline void* malloc_null(size_t, size_t);
 
 /**
  * Read from the provided stream into the provided string variable until any delimiter or EOF is found, dynamically allocating the needed memory.
