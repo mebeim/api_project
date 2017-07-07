@@ -4,7 +4,7 @@ This repo contains the final project of my Algorithms and principles of computer
 
 ## Source
 
-The entire project has been split into different header and source files for clarity, but a complete source file ([`src/full_project.c`][1]), which is the one I had to submit for evaluation, containing all that's needed, is included. The license regulating use and redistribution of the source code is provided in the file [`/LICENSE`][1].
+The entire project has been split into different header and source files for clarity, but a complete source file ([`src/full_project.c`][1]), which is the one I had to submit for evaluation, containing all that's needed, is included. The license regulating use and redistribution of the source code is provided in the file [`/LICENSE`][2].
 
 ## Documentation
 
