@@ -14,7 +14,12 @@ Source and header files contain explicative comments for every defined function,
 
 ## Building
 
-Work in progress...
+	$ git clone https://github.com/mebeim/api_project.git
+	$ cd api_project
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
 
  [1]: https://github.com/mebeim/api_project/blob/master/src/full_project.c
  [2]: https://github.com/mebeim/api_project/blob/master/LICENSE
