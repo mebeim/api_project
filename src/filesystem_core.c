@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "utils.h"
+#include "filesystem_core.h"
 
 /***********************
  **      PRIVATE      **

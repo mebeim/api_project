@@ -2,6 +2,7 @@
 #include <string.h>
 #include "utils.h"
 #include "filesystem_core.h"
+#include "filesystem_api.h"
 
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
