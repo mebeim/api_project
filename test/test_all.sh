@@ -13,10 +13,7 @@ for f in input/*.in; do
 	if [ $? -eq 0 ]; then
 		printf "OK.\n"
 	else
-		printf "ERROR!\n\n"
-		printf "Output from diff:\n"
-		echo $out
-		printf "\nTesting failed! :(\n"
+		printf "ERROR!\n\nOutput from diff:\n%s\nTesting failed! :(\n"  $out
 		exit 1
 	fi
 done
