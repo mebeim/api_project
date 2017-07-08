@@ -8,9 +8,9 @@ endif()
 
 # Compile in C99 with -Wall -Wextra plus -g for Debug or -O2 for Release
 set_property(GLOBAL PROPERTY C_STANDARD 99)
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_C_FLAGS "-Wall -Wextra")
+set(CMAKE_C_FLAGS_DEBUG "-g")
+set(CMAKE_C_FLAGS_RELEASE "-O2")
 
 # Add libraries
 add_library(utils STATIC "src/utils.c")
