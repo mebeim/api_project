@@ -39,18 +39,17 @@ size_t      fs_table_size;
  * @pre   all the checks before the creation have already been made.
  * @post  the new file is now the head of the list of children starting at parent->content.l_child.
  */
-fs_file_t* fs__new(char*, bool, fs_file_t*);
+fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent);
 
 /**
- * Browse the filesystem following the path and return a pointer to the table cell identified by the path.
+ * Browse the filesystem following the path and return a pointer to the table cell identified by the path, creating a new file in such cell if requested.
  * @param path      : the path of the file to get.
- * @param parent_arg: reference to a pointer to file, where the parent's address will be stored if needed, NULL otherwise.
  * @param new       : whether the path refers to a new file or an already existing one.
+ * @param new_is_dir: whether the new file is a directory or not.
  * @ret   a pointer to the requested table cell or NULL in case of an error (e.g. a folder in the path doesn't exist).
- * @pre   parent_arg is either NULL (if the caller doesn't want to know the parent) or the address of a pointer to file.
- * @post  if it wasn't NULL, parent_arg contains the addres of the hash table cell containing the parent.
+ * @post  if new is true, a new file is created in the table cell identified by the path.
  */
-fs_file_t** fs__get(char*, fs_file_t**, bool);
+fs_file_t** fs__get(char* path, bool new, bool new_is_dir);
 
 /**
  * Search all the files with the given name starting from cur and exploring the tree recursively.
@@ -60,7 +59,7 @@ fs_file_t** fs__get(char*, fs_file_t**, bool);
  * @ret   an array of pointers to files which all have the same requested name.
  * @pre   cur is a valid file pointer (not NULL).
  */
-fs_file_t** fs__all(fs_file_t*, const char*, size_t*);
+fs_file_t** fs__all(fs_file_t* cur, const char* name, size_t* n);
 
 /**
  * Trace the given file back until the root and return its full path.
@@ -69,7 +68,7 @@ fs_file_t** fs__all(fs_file_t*, const char*, size_t*);
  * @ret   a string representing the full path to the file.
  * @pre   cur is a valid file pointer (not NULL).
  */
-char* fs__uri(fs_file_t*, size_t);
+char* fs__uri(fs_file_t* cur, size_t len);
 
 /**
  * Delete cur and all the files contained in its subtree exploring it recursively.
@@ -78,7 +77,7 @@ char* fs__uri(fs_file_t*, size_t);
  * @post  the requested file and all its children have been deleted; their cells in the hash table contain the value FS_DELETED.
  * @pre   cur is the address of a valid file pointer (not NULL or referencing NULL).
  */
-void fs__del(fs_file_t**);
+void fs__del(fs_file_t** cur);
 
 /**
  * Compare two paths using strcmp and return the result. Used as compare function for qsort.
@@ -86,6 +85,6 @@ void fs__del(fs_file_t**);
  * @param b: second path to compare.
  * @ret   <>= 0 wether a comes before b, after b or is equal to b.
  */
-int fs__cmp(const void*, const void*);
+int fs__cmp(const void* a, const void* b);
 
 #endif

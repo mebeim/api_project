@@ -7,37 +7,14 @@
 
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
-	fs_file_t* parent;
-	char *p, *last_slash, *new_name;
-	unsigned short n_slashes;
 
-	p          = path;
-	last_slash = NULL;
-	n_slashes  = 0;
-
-	while (*p) {
-		if (*p == '/') {
-			last_slash = p;
-			n_slashes++;
-		}
-
-		p++;
-	}
-
-	if (n_slashes > 0 && n_slashes < MAX_FILESYSTEM_DEPTH) {
-		new_name = malloc_or_die(strlen(last_slash));
-		new_name = strcpy(new_name, last_slash + 1);
-		new_file = fs__get(path, &parent, true);
+	if (*path) {
+		new_file = fs__get(path, true, is_dir);
 
 		if (new_file != NULL) {
-			*new_file = fs__new(new_name, is_dir, parent);
-			fs_table_files++;
-			
 			printf(RESULT_SUCCESS"\n");
 			return;
 		}
-
-		free(new_name);
 	}
 
 	printf(RESULT_FAILURE"\n");
@@ -46,7 +23,7 @@ void fs_create(char* path, bool is_dir) {
 void fs_delete(char* path, bool recursive) {
 	fs_file_t** victim;
 
-	victim = fs__get(path, NULL, false);
+	victim = fs__get(path, false, false);
 
 	if (victim != NULL && *victim != FS_DELETED && *victim != NULL) {
 		if (recursive || (*victim)->n_children == 0) {
@@ -66,7 +43,7 @@ void fs_delete(char* path, bool recursive) {
 void fs_read(char* path) {
 	fs_file_t** file;
 
-	file = fs__get(path, NULL, false);
+	file = fs__get(path, false, false);
 
 	if (file != NULL && *file != NULL && !(*file)->is_dir) {
 		printf(RESULT_READ_SUCCESS" %s\n", (*file)->content.data);
@@ -80,7 +57,7 @@ void fs_write(char* path, const char* data) {
 	fs_file_t** file;
 	size_t data_len;
 
-	file = fs__get(path, NULL, false);
+	file = fs__get(path, false, false);
 
 	if (file != NULL && *file != NULL && !(*file)->is_dir) {
 		free((*file)->content.data);
@@ -127,7 +104,7 @@ void fs_find(const char* name) {
 void fs_exit(void) {
 	while (fs_root->content.l_child != NULL)
 		fs__del(&fs_root->content.l_child);
-	
+
 	free(fs_root);
 	free(fs_table);
 }
