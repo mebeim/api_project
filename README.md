@@ -16,6 +16,8 @@ Source and header files contain explicative comments for every defined function,
 
 ## Building
 
+Required `cmake >= 2.8.8` and `gcc >= 5`.
+
 	$ git clone https://github.com/mebeim/api_project.git
 	$ cd api_project
     $ mkdir build
