@@ -9,22 +9,28 @@
  ***********************/
 
 /**
- * Hash the string provided as key (adapted from the djb2 hash function by Dan Bernstein).
+ * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
  * @param key: the string to be hashed.
  * @ret   the computed hash.
  */
-unsigned long djb2(const char* key) {
+static unsigned long hash(const char* key) {
 	unsigned char* k;
 	unsigned long h;
-	int c;
 
-	h = 5381;
+	h = 0;
 	k = (unsigned char*)key;
 
-	while ((c = *k++))
-		h = (h << 5) + h + c;
+    while (*k) {
+        h += *k++;
+        h += h << 10;
+        h ^= h >> 6;
+    }
 
-	return h;
+    h += h << 3;
+    h ^= h >> 11;
+    h += h << 15;
+
+    return h;
 }
 
 /**
@@ -34,9 +40,9 @@ unsigned long djb2(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + djb2(key)) % fs_table_size.
+ * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
  */
-int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
+static int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
 
 	h = start;
@@ -64,11 +70,11 @@ int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool ne
  * @pre   cur is a valid file pointer (not NULL) which was already properly removed from the table.
  * @post  cur->hash is the new hash and new position in the table.
  */
-void rehash_all(fs_file_t* cur) {
+static void rehash_all(fs_file_t* cur) {
 	fs_file_t* child;
 
 	if (cur->parent != NULL) {
-		cur->hash = (cur->parent->hash + djb2(cur->name)) % fs_table_size;
+		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -86,7 +92,7 @@ void rehash_all(fs_file_t* cur) {
  * Destroy the table and allocate a new one with double size, rehashing all the files.
  * @post fs_table_t is double its previous size and contains all the files, fs_table_size contains the new size.
  */
-void expand_table(void) {
+static void expand_table(void) {
 	free(fs_table);
 	fs_table_size *= 2;
 	fs_table = malloc_null(fs_table_size, sizeof(fs_file_t*));
@@ -124,7 +130,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->l_sibling = NULL;
 		new->r_sibling = NULL;
 	} else {
-		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
+		new->hash      = (parent->hash + hash(name)) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
 		new->name      = malloc_or_die(strlen(name) + 1);
 		strcpy(new->name, name);
@@ -157,7 +163,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		if (parent->n_children == 0)
 			return NULL;
 
-		cur_hash = (parent->hash + djb2(cur_name)) % fs_table_size;
+		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		if (cur_hash == -1)
@@ -176,7 +182,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	)
 		return NULL;
 
-	cur_hash = (parent->hash + djb2(cur_name)) % fs_table_size;
+	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	if (cur_hash == -1)

@@ -1,7 +1,7 @@
 /**
  * Subject: Final test project
  * Author : Marco Bonelli
- * Date   : 2017-07-05
+ * Date   : 2017-07-09
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
@@ -63,7 +63,7 @@ static inline void* malloc_null    (size_t, size_t);
               int   getdelims      (char** restrict, const char*, FILE* restrict);
 
 /* Hash & hash table functions */
-unsigned long djb2         (const char*);
+unsigned long hash         (const char*);
 int           linear_probe (size_t, const char*, const fs_file_t*, bool);
 void          rehash_all   (fs_file_t*);
 void          expand_table (void);
@@ -273,22 +273,28 @@ int getdelims(char** restrict str, const char* delims, FILE* restrict stream) {
  ****************************************************/
 
 /**
- * Hash the string provided as key (adapted from the djb2 hash function by Dan Bernstein).
+ * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
  * @param key: the string to be hashed.
  * @ret   the computed hash.
  */
-unsigned long djb2(const char* key) {
+unsigned long hash(const char* key) {
 	unsigned char* k;
 	unsigned long h;
-	int c;
 
-	h = 5381;
+	h = 0;
 	k = (unsigned char*)key;
 
-	while ((c = *k++))
-		h = (h << 5) + h + c;
+    while (*k) {
+        h += *k++;
+        h += h << 10;
+        h ^= h >> 6;
+    }
 
-	return h;
+    h += h << 3;
+    h ^= h >> 11;
+    h += h << 15;
+
+    return h;
 }
 
 /**
@@ -298,7 +304,7 @@ unsigned long djb2(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + djb2(key)) % fs_table_size.
+ * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
  */
 int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -342,7 +348,7 @@ void rehash_all(fs_file_t* cur) {
 
 	if (cur->parent != NULL) {
 		// Rehash the current file and put it back in the table:
-		cur->hash = (cur->parent->hash + djb2(cur->name)) % fs_table_size;
+		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -409,7 +415,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->r_sibling = NULL;
 	} else {
 		// Otherwise calculate the new file's hash:
-		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
+		new->hash      = (parent->hash + hash(name)) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
 		// Use the provided name as the new file's name:
 		new->name      = malloc_or_die(strlen(name) + 1);
@@ -456,7 +462,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 			return NULL;
 
 		// Otherwise, check if the current directory actually exists:
-		cur_hash = (parent->hash + djb2(cur_name)) % fs_table_size;
+		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		// If it doesn't exist:
@@ -482,7 +488,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		return NULL;
 
 	// Otherwise look for the requested file (or the new cell where it has to be created):
-	cur_hash = (parent->hash + djb2(cur_name)) % fs_table_size;
+	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	// If the requested cell doesn't exist:
