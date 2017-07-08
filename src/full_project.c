@@ -108,7 +108,7 @@ int main(void) {
 	bool done;
 
 	fs_table_files = 0;
-	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
+	fs_table_size  = 10000 * sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
 	fs_root        = fs__new(NULL, true, NULL);
 	done           = false;
@@ -437,33 +437,27 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
  * @post  if new is true, a new file is created in the table cell identified by the path.
  */
 fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
-	fs_file_t** parent;
+	fs_file_t* parent;
 	register unsigned short depth;
 	char *cur_name, *next_name;
 	int cur_hash;
 
 	depth     = 0;
-	parent    = &fs_root;
+	parent    = fs_root;
 	cur_name  = strtok(path, "/");
 	next_name = strtok(NULL, "/");
 	cur_hash  = FS_ROOT_HASH;
 
 	// While the parent exists, we're not at the last file name in the path and we didn't reach the maximum filesystem depth:
-	while (   parent    != NULL
-	       && *parent   != NULL
-	       && *parent   != FS_DELETED
-	       && cur_name  != NULL
-	       && next_name != NULL
-		   && depth      < MAX_FILESYSTEM_DEPTH
-	) {
+	while (parent != NULL && next_name != NULL && depth < MAX_FILESYSTEM_DEPTH) {
 		// If the parent hasn't got children:
-		if (!((*parent)->n_children > 0))
+		if (parent->n_children == 0)
 			// The directory we're looking for certainly doesn't exist.
 			return NULL;
 
 		// Otherwise, check if the current directory actually exists:
-		cur_hash = ((*parent)->hash + djb2(cur_name)) % fs_table_size;
-		cur_hash = linear_probe(cur_hash, cur_name, *parent, false);
+		cur_hash = (parent->hash + djb2(cur_name)) % fs_table_size;
+		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		// If it doesn't exist:
 		if (cur_hash == -1)
@@ -472,24 +466,24 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 
 		// Otherwise keep going on:
 		depth++;
-		parent    = fs_table + cur_hash;
+		parent    = fs_table[cur_hash];
 		cur_name  = next_name;
 		next_name = strtok(NULL, "/");
 	}
 
-	// If the parent doesn't exist...
+	// If the path wasn't well formatted or the parent doesn't exist or is not a directory...
 	if (   cur_name == NULL
-	    || *parent  == FS_DELETED
-	    || !(*parent)->is_dir
+	    || parent  == NULL
+	    || !parent->is_dir
 	    // ... or we are creating a new file exceeding the children limit or the maximum depth, or we are looking for a file when the parent has no children...
-	    || !((new  && (*parent)->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && (*parent)->n_children > 0))
+	    || !((new  && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
 	)
 		// Stop here, can't do anything.
 		return NULL;
 
 	// Otherwise look for the requested file (or the new cell where it has to be created):
-	cur_hash = ((*parent)->hash + djb2(cur_name)) % fs_table_size;
-	cur_hash = linear_probe(cur_hash, cur_name, *parent, new);
+	cur_hash = (parent->hash + djb2(cur_name)) % fs_table_size;
+	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	// If the requested cell doesn't exist:
 	if (cur_hash == -1)
@@ -497,7 +491,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		return NULL;
 
 	if (new) {
-		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, *parent);
+		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, parent);
 		fs_table_files++;
 	}
 
