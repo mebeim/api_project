@@ -21,10 +21,12 @@ A file is a `struct` containing:
 
 ### The hash table
 
-The hash table representing the filesystem is an array of pointers to files. The base hash function used is the pretty simple Bernstein djb2 hash function, which takes a string as key. Closed hashing with linear probing is used to solve collisions. The initial size of the hash table is 1MiB, which should be large enough to never require an expansion (with consequent rehashing) in most cases. Both expansion and rehashing functions are provided for completeness sake.
+The hash table representing the filesystem is an array of pointers to files. The [Jenkin hash function][1], which takes a string as key, is used for hashing. Closed hashing with linear probing is used to solve collisions. The initial size of the hash table is 1MiB, which should be large enough to never require an expansion (with consequent rehashing) in most cases. Both expansion and rehashing functions are provided for completeness sake.
 
 To maintain every single file of the filesystem in the same hash table, the full path of a file would be a good key to use, but it is not practical to store such a long string for every file: it would consume too much memory. For this reason, each file only stores its name as a partial key, and the hash is calculated "piece by piece" going down the path from the root and looking at each folder's name until reaching the desired file.
 
 ### The N-ary tree
 
 Since that each file has a references to its parent, its closest right sibling, and, in case of a directory, its leftmost child, each file is in fact also a node of an N-ary tree. Without a tree structure, and using only the hash table, it would be impossible to explore the filesystem (or even know where the children of a given folder are) in a reasonable amount of time.
+
+ [1]: https://en.wikipedia.org/wiki/Jenkins_hash_function

@@ -1,12 +1,12 @@
 /**
  * Subject: Final test project
  * Author : Marco Bonelli
- * Date   : 2017-07-05
+ * Date   : 2017-07-09
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
  * (c) Marco Bonelli 2017
- * Licensed under the Apache License 2.0. 
+ * Licensed under the Apache License 2.0.
  * https://github.com/mebeim/api_project
  */
 
@@ -63,14 +63,14 @@ static inline void* malloc_null    (size_t, size_t);
               int   getdelims      (char** restrict, const char*, FILE* restrict);
 
 /* Hash & hash table functions */
-unsigned long djb2         (const char*);
+unsigned long hash         (const char*);
 int           linear_probe (size_t, const char*, const fs_file_t*, bool);
 void          rehash_all   (fs_file_t*);
 void          expand_table (void);
 
 /* Filesystem helpers */
 fs_file_t*  fs__new(char*, bool, fs_file_t*);
-fs_file_t** fs__get(char*, fs_file_t**, bool);
+fs_file_t** fs__get(char*, bool, bool);
 fs_file_t** fs__all(fs_file_t*, const char*, size_t*);
 char*       fs__uri(fs_file_t*, size_t);
 void        fs__del(fs_file_t**);
@@ -273,22 +273,28 @@ int getdelims(char** restrict str, const char* delims, FILE* restrict stream) {
  ****************************************************/
 
 /**
- * Hash the string provided as key (adapted from the djb2 hash function by Dan Bernstein).
+ * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
  * @param key: the string to be hashed.
  * @ret   the computed hash.
  */
-unsigned long djb2(const char* key) {
+unsigned long hash(const char* key) {
 	unsigned char* k;
 	unsigned long h;
-	int c;
 
-	h = 5381;
+	h = 0;
 	k = (unsigned char*)key;
 
-	while ((c = *k++))
-		h = (h << 5) + h + c;
+    while (*k) {
+        h += *k++;
+        h += h << 10;
+        h ^= h >> 6;
+    }
 
-	return h;
+    h += h << 3;
+    h ^= h >> 11;
+    h += h << 15;
+
+    return h;
 }
 
 /**
@@ -298,7 +304,7 @@ unsigned long djb2(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + djb2(key)) % fs_table_size.
+ * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
  */
 int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -342,7 +348,7 @@ void rehash_all(fs_file_t* cur) {
 
 	if (cur->parent != NULL) {
 		// Rehash the current file and put it back in the table:
-		cur->hash = (cur->parent->hash + djb2(cur->name)) % fs_table_size;
+		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -409,10 +415,12 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->r_sibling = NULL;
 	} else {
 		// Otherwise calculate the new file's hash:
-		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
+		new->hash      = (parent->hash + hash(name)) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
 		// Use the provided name as the new file's name:
-		new->name      = name;
+		new->name      = malloc_or_die(strlen(name) + 1);
+		strcpy(new->name, name);
+
 		// And insert the new file in the head of the list of children of its parent:
 		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
@@ -427,39 +435,35 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 }
 
 /**
- * Browse the filesystem following the path and return a pointer to the table cell identified by the path.
+ * Browse the filesystem following the path and return a pointer to the table cell identified by the path, creating a new file in such cell if requested.
  * @param path      : the path of the file to get.
- * @param parent_arg: reference to a pointer to file, where the parent's address will be stored if needed, NULL otherwise.
  * @param new       : whether the path refers to a new file or an already existing one.
+ * @param new_is_dir: whether the new file is a directory or not.
  * @ret   a pointer to the requested table cell or NULL in case of an error (e.g. a folder in the path doesn't exist).
- * @pre   parent_arg is either NULL (if the caller doesn't want to know the parent) or the address of a pointer to file.
- * @post  if it wasn't NULL, parent_arg contains the addres of the hash table cell containing the parent.
+ * @post  if new is true, a new file is created in the table cell identified by the path.
  */
-fs_file_t** fs__get(char* path, fs_file_t** parent_arg, bool new) {
-	fs_file_t** parent;
+fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
+	fs_file_t* parent;
+	register unsigned short depth;
 	char *cur_name, *next_name;
 	int cur_hash;
 
-	parent    = &fs_root;
+	depth     = 0;
+	parent    = fs_root;
 	cur_name  = strtok(path, "/");
 	next_name = strtok(NULL, "/");
 	cur_hash  = FS_ROOT_HASH;
 
-	// While the parent exists, and we're not at the last file name in the path:
-	while (   parent    != NULL
-	       && *parent   != NULL
-	       && *parent   != FS_DELETED
-	       && cur_name  != NULL
-	       && next_name != NULL
-	) {
+	// While the parent exists, we're not at the last file name in the path and we didn't reach the maximum filesystem depth:
+	while (parent != NULL && next_name != NULL && depth < MAX_FILESYSTEM_DEPTH) {
 		// If the parent hasn't got children:
-		if (!((*parent)->n_children > 0))
+		if (parent->n_children == 0)
 			// The directory we're looking for certainly doesn't exist.
 			return NULL;
 
 		// Otherwise, check if the current directory actually exists:
-		cur_hash = ((*parent)->hash + djb2(cur_name)) % fs_table_size;
-		cur_hash = linear_probe(cur_hash, cur_name, *parent, false);
+		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		// If it doesn't exist:
 		if (cur_hash == -1)
@@ -467,34 +471,35 @@ fs_file_t** fs__get(char* path, fs_file_t** parent_arg, bool new) {
 			return NULL;
 
 		// Otherwise keep going on:
-		parent    = fs_table + cur_hash;
+		depth++;
+		parent    = fs_table[cur_hash];
 		cur_name  = next_name;
 		next_name = strtok(NULL, "/");
 	}
 
-	// If the parent doesn't exist...
+	// If the path wasn't well formatted or the parent doesn't exist or is not a directory...
 	if (   cur_name == NULL
-		|| *parent  == FS_DELETED
-		|| !(*parent)->is_dir
-		// ... or we are creating a new file exceeding the children limit, or we are looking for a file when the parent has no children:
-		|| !((new  && (*parent)->n_children < MAX_DIRECTORY_CHILDREN) || (!new && (*parent)->n_children > 0))
+	    || parent  == NULL
+	    || !parent->is_dir
+	    // ... or we are creating a new file exceeding the children limit or the maximum depth, or we are looking for a file when the parent has no children...
+	    || !((new  && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
 	)
 		// Stop here, can't do anything.
 		return NULL;
 
 	// Otherwise look for the requested file (or the new cell where it has to be created):
-	cur_hash = ((*parent)->hash + djb2(cur_name)) % fs_table_size;
-	cur_hash = linear_probe(cur_hash, cur_name, *parent, new);
+	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	// If the requested cell doesn't exist:
 	if (cur_hash == -1)
 		// Stop here, can't do anything.
 		return NULL;
 
-	// If the caller requested it:
-	if (parent_arg != NULL)
-		// Pass a pointer to the parent:
-		*parent_arg = *parent;
+	if (new) {
+		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, parent);
+		fs_table_files++;
+	}
 
 	// And return the cell we found:
 	return fs_table + cur_hash;
@@ -643,42 +648,16 @@ int fs__cmp(const void* a, const void* b) {
  */
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
-	fs_file_t* parent;
-	char *p, *last_slash, *new_name;
-	unsigned short n_slashes;
 
-	p          = path;
-	last_slash = NULL;
-	n_slashes  = 0;
+	if (*path) {
+		// Try to create the new file:
+		new_file = fs__get(path, true, is_dir);
 
-	// Check the number of slashes and save the position of the last one to get the new file's name:
-	while (*p) {
-		if (*p == '/') {
-			last_slash = p;
-			n_slashes++;
-		}
-
-		p++;
-	}
-
-	if (n_slashes > 0 && n_slashes < MAX_FILESYSTEM_DEPTH) {
-		// Copy the new name beforehand, or strtok will mess with it:
-		new_name = malloc_or_die(strlen(last_slash));
-		new_name = strcpy(new_name, last_slash + 1);
-		// Get the hash table cell which will hold the new file:
-		new_file = fs__get(path, &parent, true);
-
-		// If the position is valid:
+		// If the new file has been successfully created:
 		if (new_file != NULL) {
-			// Create the new file:
-			*new_file = fs__new(new_name, is_dir, parent);
-			fs_table_files++;
-
 			printf(RESULT_SUCCESS"\n");
 			return;
 		}
-
-		free(new_name);
 	}
 
 	printf(RESULT_FAILURE"\n");
@@ -695,7 +674,7 @@ void fs_delete(char* path, bool recursive) {
 	fs_file_t** victim;
 
 	// Get the hash table cell of the victim:
-	victim = fs__get(path, NULL, false);
+	victim = fs__get(path, false, false);
 
 	// If the cell actually contains a valid file:
 	if (victim != NULL && *victim != FS_DELETED && *victim != NULL) {
@@ -724,7 +703,7 @@ void fs_read(char* path) {
 	fs_file_t** file;
 
 	// Get the hash table cell of the requested file:
-	file = fs__get(path, NULL, false);
+	file = fs__get(path, false, false);
 
 	// If the file actually exists and is not a directory, read its content:
 	if (file != NULL && *file != NULL && !(*file)->is_dir) {
@@ -747,7 +726,7 @@ void fs_write(char* path, const char* data) {
 	size_t data_len;
 
 	// Get the hash table cell of the requested file:
-	file = fs__get(path, NULL, false);
+	file = fs__get(path, false, false);
 
 	// If the file actually exists and is not a directory, write its content:
 	if (file != NULL && *file != NULL && !(*file)->is_dir) {
@@ -808,7 +787,7 @@ void fs_find(const char* name) {
 void fs_exit(void) {
 	while (fs_root->content.l_child != NULL)
 		fs__del(&fs_root->content.l_child);
-	
+
 	free(fs_root);
 	free(fs_table);
 }

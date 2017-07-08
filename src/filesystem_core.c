@@ -9,22 +9,28 @@
  ***********************/
 
 /**
- * Hash the string provided as key (adapted from the djb2 hash function by Dan Bernstein).
+ * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
  * @param key: the string to be hashed.
  * @ret   the computed hash.
  */
-static unsigned long djb2(const char* key) {
+static unsigned long hash(const char* key) {
 	unsigned char* k;
 	unsigned long h;
-	int c;
 
-	h = 5381;
+	h = 0;
 	k = (unsigned char*)key;
 
-	while ((c = *k++))
-		h = (h << 5) + h + c;
+    while (*k) {
+        h += *k++;
+        h += h << 10;
+        h ^= h >> 6;
+    }
 
-	return h;
+    h += h << 3;
+    h ^= h >> 11;
+    h += h << 15;
+
+    return h;
 }
 
 /**
@@ -34,7 +40,7 @@ static unsigned long djb2(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + djb2(key)) % fs_table_size.
+ * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
  */
 static int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -42,28 +48,19 @@ static int linear_probe(size_t start, const char* key, const fs_file_t* parent, 
 	h = start;
 
 	if (new) {
-		// While the cell isn't empty:
 		while (fs_table[h] != NULL && fs_table[h] != FS_DELETED) {
-			// If both name and parent of the file in the current cell match the given ones:
 			if (fs_table[h]->parent == parent && strcmp(fs_table[h]->name, key) == 0)
-				// Then the file we want to create already exists.
 				return -1;
-			// Otherwise keep going on:
 			h = (h + 1) % fs_table_size;
 		}
 	} else {
-		// While the cell is not empty and it's either a tombstone or the name or parent don't match the given ones:
 		while (fs_table[h] != NULL && (fs_table[h] == FS_DELETED || fs_table[h]->parent != parent || strcmp(fs_table[h]->name, key) != 0))
-			// Keep going on:
 			h = (h + 1) % fs_table_size;
 
-		// If we stopped because the cell is empty:
 		if (fs_table[h] == NULL)
-			// Then the file we're looking for doesn't exist.
 			return -1;
 	}
 
-	// If none of the above return statements executed, we found the right cell.
 	return (int)h;
 }
 
@@ -77,14 +74,12 @@ static void rehash_all(fs_file_t* cur) {
 	fs_file_t* child;
 
 	if (cur->parent != NULL) {
-		// Rehash the current file and put it back in the table:
-		cur->hash = (cur->parent->hash + djb2(cur->name)) % fs_table_size;
+		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
 
 	if (cur->is_dir) {
-		// Rehash all the children:
 		child = cur->content.l_child;
 		while (child != NULL) {
 			rehash_all(child);
@@ -135,9 +130,11 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->l_sibling = NULL;
 		new->r_sibling = NULL;
 	} else {
-		new->hash      = (parent->hash + djb2(name)) % fs_table_size;
+		new->hash      = (parent->hash + hash(name)) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
-		new->name      = name;
+		new->name      = malloc_or_die(strlen(name) + 1);
+		strcpy(new->name, name);
+
 		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
@@ -150,51 +147,51 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	return new;
 }
 
-fs_file_t** fs__get(char* path, fs_file_t** parent_arg, bool new) {
-	fs_file_t** parent;
+fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
+	fs_file_t* parent;
+	register unsigned short depth;
 	char *cur_name, *next_name;
 	int cur_hash;
 
-	parent    = &fs_root;
+	depth     = 0;
+	parent    = fs_root;
 	cur_name  = strtok(path, "/");
 	next_name = strtok(NULL, "/");
 	cur_hash  = FS_ROOT_HASH;
 
-	while (   parent    != NULL
-	       && *parent   != NULL
-	       && *parent   != FS_DELETED
-	       && cur_name  != NULL
-	       && next_name != NULL
-	) {
-		if (!((*parent)->n_children > 0))
+	while (parent != NULL && next_name != NULL && depth < MAX_FILESYSTEM_DEPTH) {
+		if (parent->n_children == 0)
 			return NULL;
 
-		cur_hash = ((*parent)->hash + djb2(cur_name)) % fs_table_size;
-		cur_hash = linear_probe(cur_hash, cur_name, *parent, false);
+		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		if (cur_hash == -1)
 			return NULL;
 
-		parent    = fs_table + cur_hash;
+		depth++;
+		parent    = fs_table[cur_hash];
 		cur_name  = next_name;
 		next_name = strtok(NULL, "/");
 	}
 
 	if (   cur_name == NULL
-		|| *parent  == FS_DELETED
-		|| !(*parent)->is_dir
-		|| !((new  && (*parent)->n_children < MAX_DIRECTORY_CHILDREN) || (!new && (*parent)->n_children > 0))
+	    || parent  == NULL
+	    || !parent->is_dir
+	    || !((new  && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
 	)
 		return NULL;
 
-	cur_hash = ((*parent)->hash + djb2(cur_name)) % fs_table_size;
-	cur_hash = linear_probe(cur_hash, cur_name, *parent, new);
+	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	if (cur_hash == -1)
 		return NULL;
 
-	if (parent_arg != NULL)
-		*parent_arg = *parent;
+	if (new) {
+		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, parent);
+		fs_table_files++;
+	}
 
 	return fs_table + cur_hash;
 }
@@ -230,7 +227,6 @@ fs_file_t** fs__all(fs_file_t* cur, const char* name, size_t* n) {
 			}
 
 			free(sub_matches);
-
 			child = child->r_sibling;
 		}
 	}

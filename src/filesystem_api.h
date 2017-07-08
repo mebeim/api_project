@@ -12,7 +12,7 @@
  * @post  in case of success the new file is in the proper position in both the hash table and the tree.
  * @out   RESULT_SUCCESS in case of success; RESULT_ERROR in case of error.
  */
-void fs_create(char*, bool);
+void fs_create(char* path, bool is_dir);
 
 /**
  * Delete the file represented by the given path and, if requested and if any, all its children.
@@ -21,14 +21,14 @@ void fs_create(char*, bool);
  * @post  in case of success, the file has been removed from both the hash table and the tree.
  * @out   RESULT_SUCCESS in case of success; RESULT_ERROR in case of error.
  */
-void fs_delete(char*, bool);
+void fs_delete(char* path, bool recursive);
 
 /**
  * Output the content of the file represented by the given path.
  * @param path: the path representing the file to read.
  * @out   RESULT_READ_SUCCESS followed by the file's content in case of success; RESULT_ERROR in case of error.
  */
-void fs_read(char*);
+void fs_read(char* path);
 
 /**
  * Write the given data to the file represented by the given path.
@@ -37,14 +37,14 @@ void fs_read(char*);
  * @post  the file contains the given data.
  * @out   RESULT_SUCCESS followed by the length of data in case of success; RESULT_ERROR in case of error.
  */
-void fs_write(char*, const char*);
+void fs_write(char* path, const char* data);
 
 /**
  * Find all the files of the filesystem with the given name.
  * @param name: the name to search for.
  * @out   RESULT_SUCCESS followed by the full path of the matching file, one line per match, sorted lexicographically, in case of success; RESULT_ERROR if no file with the given name is found.
  */
-void fs_find(const char*);
+void fs_find(const char* name);
 
 /**
  * Destroy the whole filesystem tree (including root) and free all the space.
