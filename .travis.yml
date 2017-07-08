@@ -1,13 +1,16 @@
 os: linux
 dist: trusty
-sudo: false
+sudo: true
 language: c
 git:
   depth: 3
 compiler:
   - gcc
-install: true
+install: false
 script:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -qq
+  - sudo apt-get install gcc-5.4 -y
   - mkdir build && cd build
   - cmake ..
   - make
