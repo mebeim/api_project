@@ -1,0 +1,32 @@
+os: linux
+dist: trusty
+sudo: required
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-5
+language: c
+git:
+  depth: 3
+compiler:
+  - gcc
+install: false
+script:
+  - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
+  - gcc --version
+  - mkdir build && cd build
+  - cmake ..
+  - make
+  - cd ../test
+  - ./test_all.sh
+notifications:
+  email: false
+  webhooks:
+    urls:
+      - https://fathomless-fjord-24024.herokuapp.com/notify
+    on_success: change
+    on_failure: always
+    on_cancel: never
+    on_error: always
