@@ -1,20 +1,24 @@
-# api_project
+Algorithms and principles of computer science project
+=====================================================
 
 [![Build Status](https://travis-ci.org/mebeim/api_project.svg?branch=developing)](https://travis-ci.org/mebeim/api_project)
 
-This repo contains the final project of my Algorithms and principles of computer science (italian Algoritmi e Principi dell'Informatica, aka A.P.I.) course.
+This repo contains the final project of my Algorithms and principles of computer science (italian Algoritmi e Principi dell'Informatica, aka A.P.I.) course. The goal of the project is to implement a simple virtual filesystem API using C99 and the standard `libc`.
 
-## Source
+Source
+------
 
 The entire project has been split into different header and source files for clarity, but a complete source file ([`src/full_project.c`][1]), which is the one I had to submit for evaluation, containing all that's needed, is included. The license regulating use and redistribution of the source code is provided in the file [`/LICENSE`][2].
 
-## Documentation
+Documentation
+-------------
 
 The project assignment and description can be found in the [`/doc`][3] folder, along with a simple description of the data structure used. The project assignment PDF which describes the program in detail is in italian.
 
 Source and header files contain explicative comments for every defined function, and more comments explaining each algorithm almost step by step can be found in the complete source file.
 
-## Building
+Building
+--------
 
 Required `cmake >= 2.8.8` and `gcc >= 5`.
 
