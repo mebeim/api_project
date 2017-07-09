@@ -16,7 +16,7 @@ for f in input/*.in; do
 		printf "ERROR!\n\n"
 		printf "Output from diff:\n"
 		printf "%s\n\n" "$out"
-		printf "Testing failed! :(\n"  $out
+		printf "Testing failed! :(\n"
 		exit 1
 	fi
 done
