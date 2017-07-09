@@ -16,9 +16,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O2")
 add_library(utils STATIC "src/utils.c")
 add_library(fs_core STATIC "src/filesystem_core.c")
 add_library(fs_api STATIC "src/filesystem_api.c")
-target_include_directories(utils PUBLIC "src/")
-target_include_directories(fs_core PUBLIC "src/")
-target_include_directories(fs_api PUBLIC "src/")
+include_directories("src")
 
 # Add source
 add_executable(api_project "src/main.c")
