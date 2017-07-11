@@ -8,7 +8,7 @@ This repo contains the final project of my Algorithms and principles of computer
 Source
 ------
 
-The entire project has been split into different header and source files for clarity, but a complete source file ([`src/full_project.c`][1]), which is the one I had to submit for evaluation, containing all that's needed, is included. The license regulating use and redistribution of the source code is provided in the file [`/LICENSE`][2].
+The entire project has been split into different header and source files for clarity, but a complete source file ([`src/full_project.c`][1]), which is the one I had to submit for evaluation, containing all that's needed, is included. The license regulating use and redistribution of the source code is provided in the [`/LICENSE`][2] file.
 
 Documentation
 -------------
@@ -28,6 +28,10 @@ Required `cmake >= 2.8.8` and `gcc >= 5`.
     $ cd build
     $ cmake ..
     $ make
+
+-----------------------------------------------------------------------------
+
+*Copyright &copy; 2017 Marco Bonelli. Licensed under the Apache License 2.0.*
 
  [1]: https://github.com/mebeim/api_project/blob/master/src/full_project.c
  [2]: https://github.com/mebeim/api_project/blob/master/LICENSE
