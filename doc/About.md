@@ -20,14 +20,14 @@ As an example, consider the following filesystem:
     [root directory]
            |
            +--[file0]
-		   |
+           |
            +--[dir1]
-		   |
-		   +--[dir2]
+           |
+           +--[dir2]
                 |
                 +--[file1]
                 |
-			    +--[file2]
+                +--[file2]
                 |
                 +--[file3]
 
