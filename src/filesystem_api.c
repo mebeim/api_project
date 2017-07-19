@@ -25,7 +25,7 @@ void fs_delete(char* path, bool recursive) {
 
 	victim = fs__get(path, false, false);
 
-	if (victim != NULL && *victim != FS_DELETED && *victim != NULL) {
+	if (victim != NULL && *victim != NULL) {
 		if (recursive || (*victim)->n_children == 0) {
 			if ((*victim)->l_sibling != NULL)
 				fs__del(&(*victim)->l_sibling->r_sibling);

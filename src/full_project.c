@@ -677,7 +677,7 @@ void fs_delete(char* path, bool recursive) {
 	victim = fs__get(path, false, false);
 
 	// If the cell actually contains a valid file:
-	if (victim != NULL && *victim != FS_DELETED && *victim != NULL) {
+	if (victim != NULL && *victim != NULL) {
 		// And if either we have to delete recursively or the victim has no children:
 		if (recursive || (*victim)->n_children == 0) {
 			// Get the address of the previous tree node pointer and procede with the deletion:
