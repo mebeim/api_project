@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #define GETDELIMS_BUFFER_CHUNK_SIZE 128
@@ -62,8 +63,15 @@ static inline void* realloc_or_die (void*, size_t);
 static inline void* malloc_null    (size_t, size_t);
               int   getdelims      (char** restrict, const char*, FILE* restrict);
 
+/* Hash helpers */
+static inline uint64_t crotate_r (uint64_t, unsigned);
+static inline uint64_t cread_u64 (const void* const);
+static inline uint64_t cread_u32 (const void* const);
+static inline uint64_t cread_u16 (const void* const);
+static inline uint64_t cread_u8  (const void* const);
+			  
 /* Hash & hash table functions */
-unsigned long hash         (const char*);
+unsigned long hash         (const char*, const unsigned long);
 int           linear_probe (size_t, const char*, const fs_file_t*, bool);
 void          rehash_all   (fs_file_t*);
 void          expand_table (void);
@@ -269,32 +277,108 @@ int getdelims(char** restrict str, const char* delims, FILE* restrict stream) {
 }
 
 /****************************************************
+ *                   HASH HELPERS                   *
+ ****************************************************/
+
+static inline uint64_t crotate_r(uint64_t v, unsigned k) {
+	return (v >> k) | (v << (64 - k));
+}
+
+static inline uint64_t cread_u64(const void* const ptr) {
+	return *(uint64_t*) ptr;
+}
+
+static inline uint64_t cread_u32(const void* const ptr) {
+	return *(uint32_t*) ptr;
+}
+
+static inline uint64_t cread_u16(const void* const ptr) {
+	return *(uint16_t*) ptr;
+}
+
+static inline uint64_t cread_u8 (const void* const ptr) {
+	return *(uint8_t*) ptr;
+}
+
+/****************************************************
  *            HASH & HASH TABLE FUNCTIONS           *
  ****************************************************/
 
 /**
- * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
- * @param key: the string to be hashed.
+ * Hash the string provided as key using the provided seed. C implementation of MetroHash64 adapted from https://github.com/rurban/smhasher.
+ * @param key:  the string to be hashed.
+ * @param seed: the seed (wow who would've guessed that).
  * @ret   the computed hash.
  */
-unsigned long hash(const char* key) {
-	unsigned char* k;
-	unsigned long h;
+unsigned long hash(const char* key, const unsigned long seed) {
+	const uint8_t *ukey, *ptr;
+	uint64_t h, len, v[4], v0, v1;
+	static const uint64_t k0 = 0xC83A91E1;
+	static const uint64_t k1 = 0x8648DBDB;
+	static const uint64_t k2 = 0x7BDEC03B;
+	static const uint64_t k3 = 0x2F5870A5;
 
-	h = 0;
-	k = (unsigned char*)key;
+	ukey = (const uint8_t*)key;
+	ptr	 = ukey;
+	len	 = strlen(key);
+	h    = ((((uint64_t)seed) + k2) * k0) + len;
 
-    while (*k) {
-        h += *k++;
-        h += h << 10;
-        h ^= h >> 6;
-    }
+	const uint8_t* const end = ptr + len;
 
-    h += h << 3;
-    h ^= h >> 11;
-    h += h << 15;
+	if (len >= 32) {
+		v[0] = h;
+		v[1] = h;
+		v[2] = h;
+		v[3] = h;
 
-    return h;
+		do {
+			v[0] += cread_u64(ptr) * k0; ptr += 8; v[0] = crotate_r(v[0],29) + v[2];
+			v[1] += cread_u64(ptr) * k1; ptr += 8; v[1] = crotate_r(v[1],29) + v[3];
+			v[2] += cread_u64(ptr) * k2; ptr += 8; v[2] = crotate_r(v[2],29) + v[0];
+			v[3] += cread_u64(ptr) * k3; ptr += 8; v[3] = crotate_r(v[3],29) + v[1];
+		} while (ptr <= (end - 32));
+
+		v[2] ^= crotate_r(((v[0] + v[3]) * k0) + v[1], 33) * k1;
+		v[3] ^= crotate_r(((v[1] + v[2]) * k1) + v[0], 33) * k0;
+		v[0] ^= crotate_r(((v[0] + v[2]) * k0) + v[3], 33) * k1;
+		v[1] ^= crotate_r(((v[1] + v[3]) * k1) + v[2], 33) * k0;
+		h += v[0] ^ v[1];
+	}
+
+	if ((end - ptr) >= 16) {
+		v0	= h + (cread_u64(ptr) * k0); ptr += 8; v0 = crotate_r(v0,33) * k1;
+		v1	= h + (cread_u64(ptr) * k1); ptr += 8; v1 = crotate_r(v1,33) * k2;
+		v0 ^= crotate_r(v0 * k0, 35) + v1;
+		v1 ^= crotate_r(v1 * k3, 35) + v0;
+		h  += v1;
+	}
+
+	if ((end - ptr) >= 8) {
+		h += cread_u64(ptr) * k3; ptr += 8;
+		h ^= crotate_r(h, 33) * k1;
+
+	}
+
+	if ((end - ptr) >= 4) {
+		h += cread_u32(ptr) * k3; ptr += 4;
+		h ^= crotate_r(h, 15) * k1;
+	}
+
+	if ((end - ptr) >= 2) {
+		h += cread_u16(ptr) * k3; ptr += 2;
+		h ^= crotate_r(h, 13) * k1;
+	}
+
+	if ((end - ptr) >= 1) {
+		h += cread_u8 (ptr) * k3;
+		h ^= crotate_r(h, 25) * k1;
+	}
+
+	h ^= crotate_r(h, 33);
+	h *= k0;
+	h ^= crotate_r(h, 33);
+
+	return (unsigned long)h;
 }
 
 /**
@@ -304,7 +388,7 @@ unsigned long hash(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
+ * @pre   start has been created as start = hash(key, parent->hash) % fs_table_size.
  */
 int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -348,7 +432,7 @@ void rehash_all(fs_file_t* cur) {
 
 	if (cur->parent != NULL) {
 		// Rehash the current file and put it back in the table:
-		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
+		cur->hash = hash(cur->name, cur->parent->hash) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -438,7 +522,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->r_sibling = NULL;
 	} else {
 		// Otherwise calculate the new file's hash:
-		new->hash      = (parent->hash + hash(name)) % fs_table_size;
+		new->hash      = hash(name, parent->hash) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
 		// Use the provided name as the new file's name:
 		new->name      = malloc_or_die(strlen(name) + 1);
@@ -485,7 +569,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 			return NULL;
 
 		// Otherwise, check if the current directory actually exists:
-		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+		cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		// If it doesn't exist:
@@ -511,7 +595,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		return NULL;
 
 	// Otherwise look for the requested file (or the new cell where it has to be created):
-	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+	cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	// If the requested cell doesn't exist:
