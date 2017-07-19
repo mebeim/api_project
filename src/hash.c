@@ -11,19 +11,19 @@ static inline uint64_t crotate_r(uint64_t v, unsigned k) {
 }
 
 static inline uint64_t cread_u64(const void* const ptr) {
-	return *(uint64_t*) ptr;
+	return *(uint64_t*)ptr;
 }
 
 static inline uint64_t cread_u32(const void* const ptr) {
-	return *(uint32_t*) ptr;
+	return *(uint32_t*)ptr;
 }
 
 static inline uint64_t cread_u16(const void* const ptr) {
-	return *(uint16_t*) ptr;
+	return *(uint16_t*)ptr;
 }
 
 static inline uint64_t cread_u8 (const void* const ptr) {
-	return *(uint8_t*) ptr;
+	return *(uint8_t*)ptr;
 }
 
 /****************************************************
