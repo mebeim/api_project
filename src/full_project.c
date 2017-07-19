@@ -69,20 +69,23 @@ void          rehash_all   (fs_file_t*);
 void          expand_table (void);
 
 /* Filesystem helpers */
-fs_file_t*  fs__new(char*, bool, fs_file_t*);
-fs_file_t** fs__get(char*, bool, bool);
-fs_file_t** fs__all(fs_file_t*, const char*, size_t*);
-char*       fs__uri(fs_file_t*, size_t);
-void        fs__del(fs_file_t**);
-int         fs__cmp(const void*, const void*);
+void        fs__init (void);
+void        fs__exit (void);
+fs_file_t*  fs__new  (char*, bool, fs_file_t*);
+fs_file_t** fs__get  (char*, bool, bool);
+fs_file_t** fs__all  (fs_file_t*, const char*, size_t*);
+char*       fs__uri  (fs_file_t*, size_t);
+void        fs__del  (fs_file_t**);
+int         fs__cmp  (const void*, const void*);
 
 /* Filesystem functions */
+void fs_init   (void);
+void fs_exit   (void);
 void fs_create (char*, bool);
 void fs_delete (char*, bool);
 void fs_read   (char*);
 void fs_write  (char*, const char*);
 void fs_find   (const char*);
-void fs_exit   (void);
 
 /****************************************************
  *                 GLOBAL VARIABLES                 *
@@ -107,11 +110,8 @@ int main(void) {
 	int chars_read;
 	bool done;
 
-	fs_table_files = 0;
-	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
-	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new(NULL, true, NULL);
-	done           = false;
+	fs_init();
+	done = false;
 
 	while (!done) {
 		chars_read = getdelims(&line, "\r\n", stdin);
@@ -379,6 +379,29 @@ void expand_table(void) {
  ****************************************************/
 
 /**
+ * Initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+inline void fs__init(void) {
+	fs_table_files = 0;
+	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
+	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
+	fs_root        = fs__new(NULL, true, NULL);
+}
+
+/**
+ * Destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+inline void fs__exit(void) {
+	while (fs_root->content.l_child != NULL)
+		fs__del(&fs_root->content.l_child);
+
+	free(fs_root);
+	free(fs_table);
+}
+
+/**
  * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
  * @param name  : the name of the new file.
  * @param is_dir: whether the new file is a directory or not.
@@ -640,6 +663,22 @@ int fs__cmp(const void* a, const void* b) {
  ****************************************************/
 
 /**
+ * Nothing but a wrapper of fs__init: initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+void fs_init(void) {
+	fs__init();
+}
+
+/**
+ * Nothing but a wrapper of fs__exit: destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs_exit(void) {
+	fs__exit();
+}
+
+/**
  * Create a file represented by the given path.
  * @param path  : the path representing the file to be created.
  * @param is_dir: whether the file to be created is a directory or not.
@@ -778,16 +817,4 @@ void fs_find(const char* name) {
 	}
 
 	printf(RESULT_FAILURE"\n");
-}
-
-/**
- * Destroy the whole filesystem tree (including root) and free all the space.
- * @post the whole filesystem tree and hashtable have been freed.
- */
-void fs_exit(void) {
-	while (fs_root->content.l_child != NULL)
-		fs__del(&fs_root->content.l_child);
-
-	free(fs_root);
-	free(fs_table);
 }
