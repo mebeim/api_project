@@ -49,7 +49,7 @@ The program receives one of the following commands for each line of the action l
  
  - `read <path>`: Read the full content of a file, printing out "contenuto" followed by a space and the content of the file if the file exists, or "no" if the file doesn't exist.
  
- - `write <path> <content>`: Write (as a whole) the content of a file, which must already exist, overwriting any existing content, then print out "ok" followed by a space and the number of written characters if the operation succeeded, or "no" otherwise. The `<content>` parameter is a sequence of alphanumeric characters and spaces delimited by double quote characters; for example: `write /poems/jabberwocky "It was a brillig and the slithy toves"`.
+ - `write <path> <content>`: Write (as a whole) the content of a file, which must already exist, overwriting any existing content, then print out "ok" followed by a space and the number of written characters if the operation succeeded, or "no" otherwise. The `<content>` parameter is a sequence of alphanumeric characters and spaces delimited by double quote characters; for example: `write /poems/jabberwocky "Twas brillig and the slithy toves"`.
  
  - `delete <path>`: Delete a resource, printing out the outcome ("ok"-"no"). A resource is only deletable if it hasn't got children.
  
