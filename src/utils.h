@@ -8,22 +8,22 @@
 /**
  * Wrapper of malloc which forces the program to exit in case of failure.
  */
-void* malloc_or_die(size_t);
+void* malloc_or_die(size_t sz);
 
 /**
  * Wrapper of calloc which forces the program to exit in case of failure.
  */
-void* calloc_or_die(size_t, size_t);
+void* calloc_or_die(size_t n, size_t sz);
 
 /**
  * Wrapper of realloc which forces the program to exit in case of failure.
  */
-void* realloc_or_die(void*, size_t);
+void* realloc_or_die(void* mem, size_t sz);
 
 /**
  * Wrapper of malloc_or_die/calloc_or_die which allocates an array of NULL pointers.
  */
-void* malloc_null(size_t, size_t);
+void* malloc_null(size_t n, size_t sz);
 
 /**
  * Read from the provided stream into the provided string variable until any delimiter or EOF is found, dynamically allocating the needed memory.
@@ -33,6 +33,6 @@ void* malloc_null(size_t, size_t);
  * @ret   number of characters read or -1 in case EOF was already reached.
  * @post  *str contains the NUL-terminated string read.
  */
-int getdelims(char** restrict, const char*, FILE* restrict);
+int getdelims(char** restrict str, const char* delims, FILE* restrict stream);
 
 #endif

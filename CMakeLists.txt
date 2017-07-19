@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.8)
-project("api_project" C)
+project("simplefs" C)
 
 # In-source build protection
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -14,14 +14,12 @@ set(CMAKE_C_FLAGS_RELEASE "-O2")
 
 # Add libraries
 add_library(utils STATIC "src/utils.c")
-add_library(fs_core STATIC "src/filesystem_core.c")
-add_library(fs_api STATIC "src/filesystem_api.c")
-target_include_directories(utils PUBLIC "src/")
-target_include_directories(fs_core PUBLIC "src/")
-target_include_directories(fs_api PUBLIC "src/")
+add_library(fscore STATIC "src/filesystem_core.c")
+add_library(fsapi STATIC "src/filesystem_api.c")
+include_directories("src")
 
 # Add source
-add_executable(api_project "src/main.c")
+add_executable(simplefs "src/main.c")
 
 # Link
-target_link_libraries(api_project utils fs_core fs_api)
+target_link_libraries(simplefs utils fscore fsapi)

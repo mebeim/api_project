@@ -1,11 +1,11 @@
 /**
- * Subject: Final test project
+ * Subject: SimpleFS - Final test project
  * Author : Marco Bonelli
  * Date   : 2017-07-09
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
- * (c) Marco Bonelli 2017
+ * Copyright (c) Marco Bonelli 2017
  * Licensed under the Apache License 2.0.
  * https://github.com/mebeim/api_project
  */
