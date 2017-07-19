@@ -22,4 +22,4 @@ include_directories("src")
 add_executable(simplefs "src/main.c")
 
 # Link
-target_link_libraries(simplefs utils fscore fsapi)
+target_link_libraries(simplefs fsapi fscore utils)
