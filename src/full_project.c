@@ -1,5 +1,5 @@
 /**
- * Subject: Final test project
+ * Subject: SimpleFS - Final test project
  * Author : Marco Bonelli
  * Date   : 2017-07-09
  * Course : Algorithms and principles of computer science [ID:086067]
