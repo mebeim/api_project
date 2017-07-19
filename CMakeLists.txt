@@ -3,7 +3,7 @@ project("simplefs" C)
 
 # In-source build protection
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-	message( FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt." )
+	message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt.")
 endif()
 
 # Compile in C99 with -Wall -Wextra plus -g for Debug or -O2 for Release
@@ -19,7 +19,7 @@ add_library(fscore STATIC "src/filesystem_core.c")
 add_library(fsapi STATIC "src/filesystem_api.c")
 include_directories("src")
 
-# Add source
+# Add executable
 add_executable(simplefs "src/main.c")
 
 # Link
