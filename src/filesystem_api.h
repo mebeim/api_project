@@ -6,6 +6,18 @@
 #define RESULT_FAILURE      "no"
 
 /**
+ * Nothing but a wrapper of fs__init: initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+void fs_init(void);
+
+/**
+ * Nothing but a wrapper of fs__exit: destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs_exit(void);
+
+/**
  * Create a file represented by the given path.
  * @param path  : the path representing the file to be created.
  * @param is_dir: whether the file to be created is a directory or not.
@@ -45,11 +57,5 @@ void fs_write(char* path, const char* data);
  * @out   RESULT_SUCCESS followed by the full path of the matching file, one line per match, sorted lexicographically, in case of success; RESULT_ERROR if no file with the given name is found.
  */
 void fs_find(const char* name);
-
-/**
- * Destroy the whole filesystem tree (including root) and free all the space.
- * @post the whole filesystem tree and hashtable have been freed.
- */
-void fs_exit(void);
 
 #endif

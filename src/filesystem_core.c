@@ -4,9 +4,9 @@
 #include "utils.h"
 #include "filesystem_core.h"
 
-/***********************
- **      PRIVATE      **
- ***********************/
+/****************************************************
+ *                      PRIVATE                     *
+ ****************************************************/
  
 static fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 static float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
@@ -104,9 +104,24 @@ static void expand_table(void) {
 	rehash_all(fs_root);
 }
 
-/**********************
- **      PUBLIC      **
- **********************/
+/****************************************************
+ *                      PUBLIC                      *
+ ****************************************************/
+
+inline void fs__init(void) {
+	fs_table_files = 0;
+	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
+	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
+	fs_root        = fs__new(NULL, true, NULL);
+}
+
+inline void fs__exit(void) {
+	while (fs_root->content.l_child != NULL)
+		fs__del(&fs_root->content.l_child);
+
+	free(fs_root);
+	free(fs_table);
+}
 
 fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;

@@ -27,6 +27,18 @@ unsigned    fs_table_files;
 size_t      fs_table_size;
 
 /**
+ * Initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+void fs__init(void);
+
+/**
+ * Destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs__exit(void);
+
+/**
  * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
  * @param name  : the name of the new file.
  * @param is_dir: whether the new file is a directory or not.

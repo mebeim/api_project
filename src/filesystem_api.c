@@ -5,6 +5,14 @@
 #include "filesystem_core.h"
 #include "filesystem_api.h"
 
+void fs_init(void) {
+	fs__init();
+}
+
+void fs_exit(void) {
+	fs__exit();
+}
+
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
 
@@ -99,12 +107,4 @@ void fs_find(const char* name) {
 	}
 
 	printf(RESULT_FAILURE"\n");
-}
-
-void fs_exit(void) {
-	while (fs_root->content.l_child != NULL)
-		fs__del(&fs_root->content.l_child);
-
-	free(fs_root);
-	free(fs_table);
 }
