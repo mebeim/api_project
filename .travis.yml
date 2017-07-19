@@ -23,10 +23,3 @@ script:
   - ./test_all.sh
 notifications:
   email: false
-  webhooks:
-    urls:
-      - https://fathomless-fjord-24024.herokuapp.com/notify
-    on_success: change
-    on_failure: always
-    on_cancel: never
-    on_error: always
