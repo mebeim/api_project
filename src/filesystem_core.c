@@ -7,6 +7,11 @@
 /***********************
  **      PRIVATE      **
  ***********************/
+ 
+static fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
+static float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
+static size_t     const FS_ROOT_HASH      = 0;
+static char*      const FS_ROOT_NAME      = "#";
 
 /**
  * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
@@ -102,11 +107,6 @@ static void expand_table(void) {
 /**********************
  **      PUBLIC      **
  **********************/
-
-fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
-float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
-size_t     const FS_ROOT_HASH      = 0;
-char*      const FS_ROOT_NAME      = "#";
 
 fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;

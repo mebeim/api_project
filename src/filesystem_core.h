@@ -21,10 +21,6 @@ struct fs_file_s {
 	fs_file_t *parent, *l_sibling, *r_sibling;
 };
 
-fs_file_t* const FS_DELETED;
-float      const FS_TABLE_MAX_LOAD;
-size_t     const FS_ROOT_HASH;
-
 fs_file_t** fs_table;
 fs_file_t*  fs_root;
 unsigned    fs_table_files;
