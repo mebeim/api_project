@@ -14,6 +14,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O2")
 
 # Add libraries
 add_library(utils STATIC "src/utils.c")
+add_library(hash STATIC "src/hash.c")
 add_library(fscore STATIC "src/filesystem_core.c")
 add_library(fsapi STATIC "src/filesystem_api.c")
 include_directories("src")
@@ -22,4 +23,4 @@ include_directories("src")
 add_executable(simplefs "src/main.c")
 
 # Link
-target_link_libraries(simplefs fsapi fscore utils)
+target_link_libraries(simplefs fsapi fscore hash utils)
