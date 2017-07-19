@@ -370,7 +370,7 @@ unsigned long hash(const char* key, const unsigned long seed) {
 	}
 
 	if ((end - ptr) >= 1) {
-		h += cread_u8 (ptr) * k3;
+		h += cread_u8(ptr) * k3;
 		h ^= crotate_r(h, 25) * k1;
 	}
 
