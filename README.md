@@ -13,7 +13,7 @@ The entire project has been split into different header and source files for cla
 Documentation
 -------------
 
-Check [`/doc/About.md`][3] for the detailed project assignment and description. The [`/doc`][4] folder also contains the original project assignment (in italian) and a brief description of the data structure I used.
+Check [`/doc/About.md`][3] for the detailed project assignment and description. The [`/doc`][4] folder also contains the original project assignment (in Italian) and a brief description of the data structure I used.
 
 Source and header files contain explicative comments for every defined function, and more comments explaining each algorithm almost step by step can be found in the complete source file.
 

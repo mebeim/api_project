@@ -3,7 +3,7 @@ SimpleFS - A simple filesystem
 
 ### June 20, 2017
 
-This file is a translated version of the [original assignment file][1] (which was provided in italian).
+This file is a translated version of the [original assignment file][1] (which was provided in Italian).
 
 ## 1. Summary
 
@@ -33,19 +33,19 @@ As an example, consider the following filesystem:
 
 The path identifying the resource `file0` is `/file0`, the one identifying `file3` is `/dir2/file3`.
 
-The following resctriction apply:
+The following restrictions apply:
 
  - Resource names are alphanumeric and at most 255 characters long.
  
  - The maximum tree height is 255.
  
- - The maximum number of childrens for a node is 1024.
+ - The maximum number of children for a node is 1024.
 
 The program receives one of the following commands for each line of the action list given as input, where `<path>` indicates a generic path, and `<name>` an alphanumeric string at most 255 characters long:
 
  - `create <path>`: Create an empty file (i.e. without any associated data) in the filesystem and print out "ok" if the file has been correctly created, or "no" if the creation didn't succeed (e.g. attempt to create a file in an inexistent directory, or exceeding the filesystem limits).
  
- - `create_dir <path>`: Create an empty directory in the filesystem and pring out "ok" if the directory has been correctly created, or "no" if the creation didn't succeed.
+ - `create_dir <path>`: Create an empty directory in the filesystem and print out "ok" if the directory has been correctly created, or "no" if the creation didn't succeed.
  
  - `read <path>`: Read the full content of a file, printing out "contenuto" followed by a space and the content of the file if the file exists, or "no" if the file doesn't exist.
  
@@ -61,7 +61,7 @@ The program receives one of the following commands for each line of the action l
 
 ## 3. Time complexity requirements
 
-Let `l` be the length of a path, `d` the number of resources in the filesystem, `d_path` the number of resources which are descendants of the one specified by the path, and `f` the number of resources found in a research, the time complexities expected from the specified primitive functions in the preceeding sections are the following.
+Let `l` be the length of a path, `d` the number of resources in the filesystem, `d_path` the number of resources which are descendants of the one specified by the path, and `f` the number of resources found in a research, the time complexities expected from the specified primitive functions in the preceding sections are the following.
 
 | Command      | Complexity                  |
 |--------------|-----------------------------|
