@@ -13,7 +13,7 @@ The entire project has been split into different header and source files for cla
 Documentation
 -------------
 
-The detailed project assignment and description can be found in the [`/doc`][3] folder, along with a simple description of the data structure used. The original project assignment file ([`/doc/Progetto v1.pdf`][4]) is in italian.
+Check [`/doc/About.md`][3] for the detailed project assignment and description. The [`/doc`][4] folder also contains the original project assignment (in italian) and a brief description of the data structure I used.
 
 Source and header files contain explicative comments for every defined function, and more comments explaining each algorithm almost step by step can be found in the complete source file.
 
@@ -35,5 +35,5 @@ Required `cmake >= 2.8.8` and `gcc >= 5`.
 
  [1]: https://github.com/mebeim/api_project/blob/master/src/full_project.c
  [2]: https://github.com/mebeim/api_project/blob/master/LICENSE
- [3]: https://github.com/mebeim/api_project/tree/master/doc
- [4]: https://github.com/mebeim/api_project/blob/master/doc/Progetto%20v1.pdf
+ [3]: https://github.com/mebeim/api_project/blob/master/doc/About.md
+ [4]: https://github.com/mebeim/api_project/tree/master/doc
