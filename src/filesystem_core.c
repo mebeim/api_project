@@ -2,41 +2,17 @@
 #include <stdbool.h>
 #include <string.h>
 #include "utils.h"
+#include "hash.h"
 #include "filesystem_core.h"
 
 /****************************************************
  *                      PRIVATE                     *
  ****************************************************/
- 
+
 static fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 static float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
 static size_t     const FS_ROOT_HASH      = 0;
 static char*      const FS_ROOT_NAME      = "#";
-
-/**
- * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
- * @param key: the string to be hashed.
- * @ret   the computed hash.
- */
-static unsigned long hash(const char* key) {
-	unsigned char* k;
-	unsigned long h;
-
-	h = 0;
-	k = (unsigned char*)key;
-
-    while (*k) {
-        h += *k++;
-        h += h << 10;
-        h ^= h >> 6;
-    }
-
-    h += h << 3;
-    h ^= h >> 11;
-    h += h << 15;
-
-    return h;
-}
 
 /**
  * Scan the table from a start index until a valid cell is found.
@@ -45,7 +21,7 @@ static unsigned long hash(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
+ * @pre   start has been created as start = hash(key, parent->hash) % fs_table_size.
  */
 static int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -79,7 +55,7 @@ static void rehash_all(fs_file_t* cur) {
 	fs_file_t* child;
 
 	if (cur->parent != NULL) {
-		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
+		cur->hash = hash(cur->name, cur->parent->hash) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -145,7 +121,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->l_sibling = NULL;
 		new->r_sibling = NULL;
 	} else {
-		new->hash      = (parent->hash + hash(name)) % fs_table_size;
+		new->hash      = hash(name, parent->hash) % fs_table_size;
 		new->hash      = linear_probe(new->hash, name, parent, true);
 		new->name      = malloc_or_die(strlen(name) + 1);
 		strcpy(new->name, name);
@@ -178,7 +154,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		if (parent->n_children == 0)
 			return NULL;
 
-		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+		cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		if (cur_hash == -1)
@@ -197,7 +173,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	)
 		return NULL;
 
-	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+	cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	if (cur_hash == -1)
