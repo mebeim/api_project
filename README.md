@@ -1,5 +1,5 @@
-Algorithms and principles of computer science project
-=====================================================
+SimpleFS - A simple file system
+===============================
 
 [![Build Status](https://travis-ci.org/mebeim/api_project.svg?branch=developing)](https://travis-ci.org/mebeim/api_project)
 
@@ -13,7 +13,7 @@ The entire project has been split into different header and source files for cla
 Documentation
 -------------
 
-The project assignment and description can be found in the [`/doc`][3] folder, along with a simple description of the data structure used. The project assignment PDF which describes the program in detail is in italian.
+The detailed project assignment and description can be found in the [`/doc`][3] folder, along with a simple description of the data structure used. The original project assignment file ([`/doc/Progetto v1.pdf`][4]) is in italian.
 
 Source and header files contain explicative comments for every defined function, and more comments explaining each algorithm almost step by step can be found in the complete source file.
 
@@ -36,3 +36,4 @@ Required `cmake >= 2.8.8` and `gcc >= 5`.
  [1]: https://github.com/mebeim/api_project/blob/master/src/full_project.c
  [2]: https://github.com/mebeim/api_project/blob/master/LICENSE
  [3]: https://github.com/mebeim/api_project/tree/master/doc
+ [4]: https://github.com/mebeim/api_project/blob/master/doc/Progetto%20v1.pdf
