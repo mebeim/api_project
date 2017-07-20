@@ -24,3 +24,7 @@ add_executable(simplefs "src/main.c")
 
 # Link
 target_link_libraries(simplefs fsapi fscore hash utils)
+
+# Testing
+add_custom_target(simplefs_test COMMAND ${CMAKE_SOURCE_DIR}/test/test_all.sh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test)
+add_dependencies(simplefs_test simplefs)

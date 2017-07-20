@@ -11,15 +11,11 @@ language: c
 git:
   depth: 3
 compiler:
-  - gcc
+  - gcc-5
 install: false
 script:
-  - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
-  - gcc --version
   - mkdir build && cd build
   - cmake ..
-  - make
-  - cd ../test
-  - ./test_all.sh
+  - make simplefs_test
 notifications:
   email: false
