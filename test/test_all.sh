@@ -1,3 +1,5 @@
+#!/bin/bash
+
 printf "Running all tests:\n"
 
 i=0
@@ -7,7 +9,7 @@ for f in input/*.in; do
 	((i++))
 	fname=$(basename ${f%.in})
 
-	printf "  [%d/%d] File \"%s\"... " $i $n $f
+	printf "[%d/%d] File \"%s\"... " $i $n $f
 	out=$(../build/simplefs < input/$fname.in | diff output/$fname.out -)
 
 	if [ $? -eq 0 ]; then
