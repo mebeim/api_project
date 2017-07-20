@@ -10,6 +10,8 @@ endif()
 set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
+set(CMAKE_C_FLAGS_COVERAGE "-O0 -coverage")
+
 
 # Add libraries
 add_library(utils STATIC "src/utils.c")
@@ -25,5 +27,9 @@ add_executable(simplefs "src/main.c")
 target_link_libraries(simplefs fsapi fscore hash utils)
 
 # Testing
-add_custom_target(simplefs_test COMMAND ${CMAKE_SOURCE_DIR}/test/test_all.sh WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test)
-add_dependencies(simplefs_test simplefs)
+add_custom_target(
+	simplefs_test
+	COMMAND ${CMAKE_SOURCE_DIR}/test/test_all.sh
+	DEPENDS simplefs
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test
+)
