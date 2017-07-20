@@ -20,14 +20,25 @@ Source and header files contain explicative comments for every defined function,
 Building
 --------
 
-Required `cmake >= 2.8.8` and `gcc >= 5`.
+Required `cmake >= 2.8`.
 
-	$ git clone https://github.com/mebeim/api_project.git
-	$ cd api_project
-    $ mkdir build
-    $ cd build
-    $ cmake ..
-    $ make
+	~$ git clone https://github.com/mebeim/api_project.git
+	~$ cd api_project
+    ~/api_project$ mkdir build
+    ~/api_project$ cd build
+    ~/api_project/build$ cmake ..
+    ~/api_project/build$ make
+
+Testing
+-------
+
+You can either test using make and specifying the `simplefs_test` target:
+
+    ~/api_project/build$ make simplefs_test
+
+Or directly calling the test script:
+
+    ~/api_project/test$ ./test_all.sh
 
 -----------------------------------------------------------------------------
 
