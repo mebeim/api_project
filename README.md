@@ -32,7 +32,7 @@ Required `cmake >= 2.8`.
 Testing
 -------
 
-You can either test using make and specifying the `simplefs_test` target:
+You can either test using `make` and specifying the `simplefs_test` target:
 
     ~/api_project/build$ make simplefs_test
 
