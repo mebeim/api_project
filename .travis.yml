@@ -10,8 +10,7 @@ addons:
 language: c
 git:
   depth: 3
-compiler:
-  - gcc-5
+compiler: gcc
 install: false
 script:
   - mkdir build && cd build
