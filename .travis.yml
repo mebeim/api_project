@@ -1,9 +1,9 @@
 os: linux
 dist: trusty
 language: c
-git:
-  depth: 3
 compiler: gcc
+git:
+  depth: 1
 script:
   - mkdir build && cd build
   - cmake ..
