@@ -1,7 +1,7 @@
-#include <stdio.h>
-
 #ifndef API_PROJECT_UTILS_INCLUDED
 #define API_PROJECT_UTILS_INCLUDED
+
+#include <stdio.h>
 
 #define GETDELIMS_BUFFER_CHUNK_SIZE 128
 
