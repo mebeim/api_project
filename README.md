@@ -1,7 +1,7 @@
 SimpleFS - A simple file system
 ===============================
 
-[![Build Status](https://travis-ci.org/mebeim/api_project.svg?branch=developing)](https://travis-ci.org/mebeim/api_project) [![Coverage](https://codecov.io/gh/mebeim/api_project/branch/coverage-test/graph/badge.svg)](https://codecov.io/gh/mebeim/api_project)
+[![Build Status](https://travis-ci.org/mebeim/api_project.svg?branch=coverage-test)](https://travis-ci.org/mebeim/api_project) [![Coverage](https://codecov.io/gh/mebeim/api_project/branch/coverage-test/graph/badge.svg)](https://codecov.io/gh/mebeim/api_project)
 
 This repo contains the final project of my Algorithms and principles of computer science (italian Algoritmi e Principi dell'Informatica, aka A.P.I.) course. The goal of the project is to implement a simple virtual filesystem API using C99 and the standard `libc`.
 
