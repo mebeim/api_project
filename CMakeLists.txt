@@ -8,7 +8,7 @@ endif()
 
 # Compile using the C99 standard with -Wall -Wextra plus -g for Debug or -O2 for Release
 set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
-set(CMAKE_C_FLAGS_DEBUG "-g")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 set(CMAKE_C_FLAGS_COVERAGE "-O0 -coverage")
 
