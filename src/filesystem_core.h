@@ -59,16 +59,16 @@ void fs__init(void);
 void fs__exit(void);
 
 /**
- * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
- * @param new_hash: the hash of the new file.
+ * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children; expand the hash table if necessary, calculating the updated hash.
+ * @param new_hash: pointer to the hash of the new file.
  * @param new_name: the name of the new file.
  * @param is_dir  : whether the new file is a directory or not.
  * @param parent  : a pointer to the new file's parent.
  * @ret   a pointer to the new file.
  * @pre   all the checks before the creation have already been made.
- * @post  the new file is now the head of the list of children starting at parent->content.l_child.
+ * @post  the new file is now the head of the list of children starting at parent->content.l_child; if the hash table is expanded during the creation, *new_hash now contains the updated hash.
  */
-fs_file_t* fs__new(int new_hash, char* new_name, bool is_dir, fs_file_t* parent);
+fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent);
 
 /**
  * Browse the filesystem following the path and return a pointer to the table cell identified by the path, creating a new file in such cell if requested.

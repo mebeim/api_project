@@ -31,7 +31,7 @@
 
 static fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 static float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
-static size_t     const FS_ROOT_HASH      = 0;
+static int        const FS_ROOT_HASH      = 0;
 static char*      const FS_ROOT_NAME      = "#";
 
 /**
@@ -108,7 +108,7 @@ inline void fs__init(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new(FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
+	fs_root        = fs__new((int*)&FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
 }
 
 inline void fs__exit(void) {
@@ -119,15 +119,18 @@ inline void fs__exit(void) {
 	free(fs_table);
 }
 
-fs_file_t* fs__new(int new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
+fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
-	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
+	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD) {
 		expand_table();
+		*new_hash = hash(new_name, parent->hash) % fs_table_size;
+		*new_hash = linear_probe(*new_hash, new_name, parent, true);
+	}
 
 	new             = malloc_or_die(sizeof(fs_file_t));
 	new->name       = malloc_or_die(strlen(new_name) + 1);
-	new->hash       = new_hash;
+	new->hash       = *new_hash;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
 	new->parent     = parent;
@@ -196,7 +199,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		return NULL;
 
 	if (new) {
-		new_file = fs__new(cur_hash, cur_name, new_is_dir, parent);
+		new_file = fs__new(&cur_hash, cur_name, new_is_dir, parent);
 		fs_table[cur_hash] = new_file;
 		fs_table_files++;
 	}
