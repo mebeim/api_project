@@ -1,5 +1,25 @@
-#ifndef API_PROJEXT_FS_CORE_INCLUDED
-#define API_PROJEXT_FS_CORE_INCLUDED
+/**
+ * File  : filesystem_core.h
+ * Author: Marco Bonelli
+ * Date  : 2017-07-22
+ *
+ * Copyright (c) 2017 Marco Bonelli.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef API_PROJECT_FS_CORE_INCLUDED
+#define API_PROJECT_FS_CORE_INCLUDED
 
 #define MAX_FILESYSTEM_DEPTH 255
 #define MAX_DIRECTORY_CHILDREN 1024
@@ -21,25 +41,34 @@ struct fs_file_s {
 	fs_file_t *parent, *l_sibling, *r_sibling;
 };
 
-fs_file_t* const FS_DELETED;
-float      const FS_TABLE_MAX_LOAD;
-size_t     const FS_ROOT_HASH;
-
 fs_file_t** fs_table;
 fs_file_t*  fs_root;
 unsigned    fs_table_files;
 size_t      fs_table_size;
 
 /**
- * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
- * @param name  : the name of the new file.
- * @param is_dir: whether the new file is a directory or not.
- * @param parent: a pointer to the new file's parent.
+ * Initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+void fs__init(void);
+
+/**
+ * Destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs__exit(void);
+
+/**
+ * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children; expand the hash table if necessary, calculating the updated hash.
+ * @param new_hash: pointer to the hash of the new file.
+ * @param new_name: the name of the new file.
+ * @param is_dir  : whether the new file is a directory or not.
+ * @param parent  : a pointer to the new file's parent.
  * @ret   a pointer to the new file.
  * @pre   all the checks before the creation have already been made.
- * @post  the new file is now the head of the list of children starting at parent->content.l_child.
+ * @post  the new file is now the head of the list of children starting at parent->content.l_child; if the hash table is expanded during the creation, *new_hash now contains the updated hash.
  */
-fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent);
+fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent);
 
 /**
  * Browse the filesystem following the path and return a pointer to the table cell identified by the path, creating a new file in such cell if requested.

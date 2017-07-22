@@ -1,25 +1,14 @@
 os: linux
 dist: trusty
-sudo: required
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-5
 language: c
+compiler: gcc
 git:
-  depth: 3
-compiler:
-  - gcc
-install: false
+  depth: 1
 script:
-  - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
-  - gcc --version
   - mkdir build && cd build
-  - cmake ..
-  - make
-  - cd ../test
-  - ./test_all.sh
+  - cmake -DCMAKE_BUILD_TYPE=Coverage ..
+  - make simplefs_test
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 notifications:
   email: false

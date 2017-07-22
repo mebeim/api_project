@@ -1,9 +1,37 @@
+/**
+ * File  : filesystem_api.c
+ * Author: Marco Bonelli
+ * Date  : 2017-07-20
+ *
+ * Copyright (c) 2017 Marco Bonelli.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include "utils.h"
 #include "filesystem_core.h"
 #include "filesystem_api.h"
+
+void fs_init(void) {
+	fs__init();
+}
+
+void fs_exit(void) {
+	fs__exit();
+}
 
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
@@ -25,7 +53,7 @@ void fs_delete(char* path, bool recursive) {
 
 	victim = fs__get(path, false, false);
 
-	if (victim != NULL && *victim != FS_DELETED && *victim != NULL) {
+	if (victim != NULL && *victim != NULL) {
 		if (recursive || (*victim)->n_children == 0) {
 			if ((*victim)->l_sibling != NULL)
 				fs__del(&(*victim)->l_sibling->r_sibling);
@@ -99,12 +127,4 @@ void fs_find(const char* name) {
 	}
 
 	printf(RESULT_FAILURE"\n");
-}
-
-void fs_exit(void) {
-	while (fs_root->content.l_child != NULL)
-		fs__del(&fs_root->content.l_child);
-
-	free(fs_root);
-	free(fs_table);
 }

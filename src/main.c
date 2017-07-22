@@ -1,3 +1,23 @@
+/**
+ * File  : main.c
+ * Author: Marco Bonelli
+ * Date  : 2017-07-20
+ *
+ * Copyright (c) 2017 Marco Bonelli.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -18,11 +38,8 @@ int main(void) {
 	int chars_read;
 	bool done;
 
-	fs_table_files = 0;
-	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
-	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new(NULL, true, NULL);
-	done           = false;
+	fs_init();
+	done = false;
 
 	while (!done) {
 		chars_read = getdelims(&line, "\r\n", stdin);
@@ -54,7 +71,10 @@ int main(void) {
 				break;
 
 			case COMMAND_WRITE:
-				str = strtok(NULL, "\"");
+				str = strtok(NULL, "\r\n");
+				str = strchr(str, '"');
+				str = strtok(str, "\"");
+
 				fs_write(arg, str);
 				break;
 

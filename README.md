@@ -13,21 +13,32 @@ The entire project has been split into different header and source files for cla
 Documentation
 -------------
 
-The detailed project assignment and description can be found in the [`/doc`][3] folder, along with a simple description of the data structure used. The original project assignment file ([`/doc/Progetto v1.pdf`][4]) is in italian.
+Check [`/doc/About.md`][3] for the detailed project assignment and description. The [`/doc`][4] folder also contains the original project assignment (in Italian) and a brief description of the data structure I used.
 
 Source and header files contain explicative comments for every defined function, and more comments explaining each algorithm almost step by step can be found in the complete source file.
 
 Building
 --------
 
-Required `cmake >= 2.8.8` and `gcc >= 5`.
+Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
 
-	$ git clone https://github.com/mebeim/api_project.git
-	$ cd api_project
-    $ mkdir build
-    $ cd build
-    $ cmake ..
-    $ make
+	~$ git clone https://github.com/mebeim/api_project.git
+	~$ cd api_project
+    ~/api_project$ mkdir build
+    ~/api_project$ cd build
+    ~/api_project/build$ cmake ..
+    ~/api_project/build$ make
+
+Testing
+-------
+
+You can either test using `make` and specifying the `simplefs_test` target:
+
+    ~/api_project/build$ make simplefs_test
+
+Or directly calling the test script:
+
+    ~/api_project/test$ ./test_all.sh
 
 -----------------------------------------------------------------------------
 
@@ -35,5 +46,5 @@ Required `cmake >= 2.8.8` and `gcc >= 5`.
 
  [1]: https://github.com/mebeim/api_project/blob/master/src/full_project.c
  [2]: https://github.com/mebeim/api_project/blob/master/LICENSE
- [3]: https://github.com/mebeim/api_project/tree/master/doc
- [4]: https://github.com/mebeim/api_project/blob/master/doc/Progetto%20v1.pdf
+ [3]: https://github.com/mebeim/api_project/blob/master/doc/About.md
+ [4]: https://github.com/mebeim/api_project/tree/master/doc

@@ -1,37 +1,38 @@
+/**
+ * File  : filesystem_core.c
+ * Author: Marco Bonelli
+ * Date  : 2017-07-22
+ *
+ * Copyright (c) 2017 Marco Bonelli.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include "utils.h"
+#include "hash.h"
 #include "filesystem_core.h"
 
-/***********************
- **      PRIVATE      **
- ***********************/
+/****************************************************
+ *                      PRIVATE                     *
+ ****************************************************/
 
-/**
- * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
- * @param key: the string to be hashed.
- * @ret   the computed hash.
- */
-static unsigned long hash(const char* key) {
-	unsigned char* k;
-	unsigned long h;
-
-	h = 0;
-	k = (unsigned char*)key;
-
-    while (*k) {
-        h += *k++;
-        h += h << 10;
-        h ^= h >> 6;
-    }
-
-    h += h << 3;
-    h ^= h >> 11;
-    h += h << 15;
-
-    return h;
-}
+static fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
+static float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
+static int        const FS_ROOT_HASH      = 0;
+static char*      const FS_ROOT_NAME      = "#";
 
 /**
  * Scan the table from a start index until a valid cell is found.
@@ -40,7 +41,7 @@ static unsigned long hash(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
+ * @pre   start has been created as start = hash(key, parent->hash) % fs_table_size.
  */
 static int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -74,7 +75,7 @@ static void rehash_all(fs_file_t* cur) {
 	fs_file_t* child;
 
 	if (cur->parent != NULL) {
-		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
+		cur->hash = hash(cur->name, cur->parent->hash) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -99,25 +100,43 @@ static void expand_table(void) {
 	rehash_all(fs_root);
 }
 
-/**********************
- **      PUBLIC      **
- **********************/
+/****************************************************
+ *                      PUBLIC                      *
+ ****************************************************/
 
-fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
-float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
-size_t     const FS_ROOT_HASH      = 0;
-char*      const FS_ROOT_NAME      = "#";
+inline void fs__init(void) {
+	fs_table_files = 0;
+	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
+	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
+	fs_root        = fs__new((int*)&FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
+}
 
-fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
+inline void fs__exit(void) {
+	while (fs_root->content.l_child != NULL)
+		fs__del(&fs_root->content.l_child);
+
+	free(fs_root);
+	free(fs_table);
+}
+
+fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
-	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
+	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD) {
 		expand_table();
+		*new_hash = hash(new_name, parent->hash) % fs_table_size;
+		*new_hash = linear_probe(*new_hash, new_name, parent, true);
+	}
 
 	new             = malloc_or_die(sizeof(fs_file_t));
+	new->name       = malloc_or_die(strlen(new_name) + 1);
+	new->hash       = *new_hash;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
 	new->parent     = parent;
+	new->l_sibling  = NULL;
+
+	strcpy(new->name, new_name);
 
 	if (is_dir)
 		new->content.l_child = NULL;
@@ -125,17 +144,8 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->content.data = calloc_or_die(1, sizeof(char));
 
 	if (parent == NULL) {
-		new->hash      = FS_ROOT_HASH;
-		new->name      = FS_ROOT_NAME;
-		new->l_sibling = NULL;
 		new->r_sibling = NULL;
 	} else {
-		new->hash      = (parent->hash + hash(name)) % fs_table_size;
-		new->hash      = linear_probe(new->hash, name, parent, true);
-		new->name      = malloc_or_die(strlen(name) + 1);
-		strcpy(new->name, name);
-
-		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
 			new->r_sibling->l_sibling = new;
@@ -148,7 +158,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 }
 
 fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
-	fs_file_t* parent;
+	fs_file_t *new_file, *parent;
 	register unsigned short depth;
 	char *cur_name, *next_name;
 	int cur_hash;
@@ -163,7 +173,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		if (parent->n_children == 0)
 			return NULL;
 
-		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+		cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		if (cur_hash == -1)
@@ -182,14 +192,15 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	)
 		return NULL;
 
-	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+	cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	if (cur_hash == -1)
 		return NULL;
 
 	if (new) {
-		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, parent);
+		new_file = fs__new(&cur_hash, cur_name, new_is_dir, parent);
+		fs_table[cur_hash] = new_file;
 		fs_table_files++;
 	}
 

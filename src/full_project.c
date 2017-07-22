@@ -1,7 +1,7 @@
 /**
  * Subject: SimpleFS - Final test project
  * Author : Marco Bonelli
- * Date   : 2017-07-09
+ * Date   : 2017-07-22
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #define GETDELIMS_BUFFER_CHUNK_SIZE 128
@@ -62,27 +63,37 @@ static inline void* realloc_or_die (void*, size_t);
 static inline void* malloc_null    (size_t, size_t);
               int   getdelims      (char** restrict, const char*, FILE* restrict);
 
+/* Hash helpers */
+static inline uint64_t crotate_r (uint64_t, unsigned);
+static inline uint64_t cread_u64 (const void* const);
+static inline uint64_t cread_u32 (const void* const);
+static inline uint64_t cread_u16 (const void* const);
+static inline uint64_t cread_u8  (const void* const);
+
 /* Hash & hash table functions */
-unsigned long hash         (const char*);
-int           linear_probe (size_t, const char*, const fs_file_t*, bool);
-void          rehash_all   (fs_file_t*);
-void          expand_table (void);
+size_t hash         (const char*, const unsigned long);
+int    linear_probe (size_t, const char*, const fs_file_t*, bool);
+void   rehash_all   (fs_file_t*);
+void   expand_table (void);
 
 /* Filesystem helpers */
-fs_file_t*  fs__new(char*, bool, fs_file_t*);
-fs_file_t** fs__get(char*, bool, bool);
-fs_file_t** fs__all(fs_file_t*, const char*, size_t*);
-char*       fs__uri(fs_file_t*, size_t);
-void        fs__del(fs_file_t**);
-int         fs__cmp(const void*, const void*);
+void        fs__init (void);
+void        fs__exit (void);
+fs_file_t*  fs__new  (int*, char*, bool, fs_file_t*);
+fs_file_t** fs__get  (char*, bool, bool);
+fs_file_t** fs__all  (fs_file_t*, const char*, size_t*);
+char*       fs__uri  (fs_file_t*, size_t);
+void        fs__del  (fs_file_t**);
+int         fs__cmp  (const void*, const void*);
 
 /* Filesystem functions */
+void fs_init   (void);
+void fs_exit   (void);
 void fs_create (char*, bool);
 void fs_delete (char*, bool);
 void fs_read   (char*);
 void fs_write  (char*, const char*);
 void fs_find   (const char*);
-void fs_exit   (void);
 
 /****************************************************
  *                 GLOBAL VARIABLES                 *
@@ -90,7 +101,7 @@ void fs_exit   (void);
 
 fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
-size_t     const FS_ROOT_HASH      = 0;
+int        const FS_ROOT_HASH      = 0;
 char*      const FS_ROOT_NAME      = "#";
 
 fs_file_t** fs_table;
@@ -107,11 +118,8 @@ int main(void) {
 	int chars_read;
 	bool done;
 
-	fs_table_files = 0;
-	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
-	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new(NULL, true, NULL);
-	done           = false;
+	fs_init();
+	done = false;
 
 	while (!done) {
 		chars_read = getdelims(&line, "\r\n", stdin);
@@ -143,7 +151,10 @@ int main(void) {
 				break;
 
 			case COMMAND_WRITE:
-				str = strtok(NULL, "\"");
+				str = strtok(NULL, "\r\n");
+				str = strchr(str, '"');
+				str = strtok(str, "\"");
+
 				fs_write(arg, str);
 				break;
 
@@ -269,32 +280,108 @@ int getdelims(char** restrict str, const char* delims, FILE* restrict stream) {
 }
 
 /****************************************************
+ *                   HASH HELPERS                   *
+ ****************************************************/
+
+static inline uint64_t crotate_r(uint64_t v, unsigned k) {
+	return (v >> k) | (v << (64 - k));
+}
+
+static inline uint64_t cread_u64(const void* const ptr) {
+	return *(uint64_t*)ptr;
+}
+
+static inline uint64_t cread_u32(const void* const ptr) {
+	return *(uint32_t*)ptr;
+}
+
+static inline uint64_t cread_u16(const void* const ptr) {
+	return *(uint16_t*)ptr;
+}
+
+static inline uint64_t cread_u8 (const void* const ptr) {
+	return *(uint8_t*)ptr;
+}
+
+/****************************************************
  *            HASH & HASH TABLE FUNCTIONS           *
  ****************************************************/
 
 /**
- * Hash the string provided as key (currently using the Jenkins hash function, still open for better alternatives).
- * @param key: the string to be hashed.
+ * Hash the string provided as key using the provided seed. C implementation of MetroHash64 adapted from https://github.com/rurban/smhasher.
+ * @param key:  the string to be hashed.
+ * @param seed: the seed (wow who would've guessed that).
  * @ret   the computed hash.
  */
-unsigned long hash(const char* key) {
-	unsigned char* k;
-	unsigned long h;
+size_t hash(const char* key, const unsigned long seed) {
+	const uint8_t *ukey, *ptr;
+	uint64_t h, len, v[4], v0, v1;
+	static const uint64_t k0 = 0xC83A91E1;
+	static const uint64_t k1 = 0x8648DBDB;
+	static const uint64_t k2 = 0x7BDEC03B;
+	static const uint64_t k3 = 0x2F5870A5;
 
-	h = 0;
-	k = (unsigned char*)key;
+	ukey = (const uint8_t*)key;
+	ptr	 = ukey;
+	len	 = strlen(key);
+	h    = ((((uint64_t)seed) + k2) * k0) + len;
 
-    while (*k) {
-        h += *k++;
-        h += h << 10;
-        h ^= h >> 6;
-    }
+	const uint8_t* const end = ptr + len;
 
-    h += h << 3;
-    h ^= h >> 11;
-    h += h << 15;
+	if (len >= 32) {
+		v[0] = h;
+		v[1] = h;
+		v[2] = h;
+		v[3] = h;
 
-    return h;
+		do {
+			v[0] += cread_u64(ptr) * k0; ptr += 8; v[0] = crotate_r(v[0],29) + v[2];
+			v[1] += cread_u64(ptr) * k1; ptr += 8; v[1] = crotate_r(v[1],29) + v[3];
+			v[2] += cread_u64(ptr) * k2; ptr += 8; v[2] = crotate_r(v[2],29) + v[0];
+			v[3] += cread_u64(ptr) * k3; ptr += 8; v[3] = crotate_r(v[3],29) + v[1];
+		} while (ptr <= (end - 32));
+
+		v[2] ^= crotate_r(((v[0] + v[3]) * k0) + v[1], 33) * k1;
+		v[3] ^= crotate_r(((v[1] + v[2]) * k1) + v[0], 33) * k0;
+		v[0] ^= crotate_r(((v[0] + v[2]) * k0) + v[3], 33) * k1;
+		v[1] ^= crotate_r(((v[1] + v[3]) * k1) + v[2], 33) * k0;
+		h += v[0] ^ v[1];
+	}
+
+	if ((end - ptr) >= 16) {
+		v0	= h + (cread_u64(ptr) * k0); ptr += 8; v0 = crotate_r(v0,33) * k1;
+		v1	= h + (cread_u64(ptr) * k1); ptr += 8; v1 = crotate_r(v1,33) * k2;
+		v0 ^= crotate_r(v0 * k0, 35) + v1;
+		v1 ^= crotate_r(v1 * k3, 35) + v0;
+		h  += v1;
+	}
+
+	if ((end - ptr) >= 8) {
+		h += cread_u64(ptr) * k3; ptr += 8;
+		h ^= crotate_r(h, 33) * k1;
+
+	}
+
+	if ((end - ptr) >= 4) {
+		h += cread_u32(ptr) * k3; ptr += 4;
+		h ^= crotate_r(h, 15) * k1;
+	}
+
+	if ((end - ptr) >= 2) {
+		h += cread_u16(ptr) * k3; ptr += 2;
+		h ^= crotate_r(h, 13) * k1;
+	}
+
+	if ((end - ptr) >= 1) {
+		h += cread_u8 (ptr) * k3;
+		h ^= crotate_r(h, 25) * k1;
+	}
+
+	h ^= crotate_r(h, 33);
+	h *= k0;
+	h ^= crotate_r(h, 33);
+
+	return (size_t)h;
 }
 
 /**
@@ -304,7 +391,7 @@ unsigned long hash(const char* key) {
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
- * @pre   start has been created as start = (parent->hash + hash(key)) % fs_table_size.
+ * @pre   start has been created as start = hash(key, parent->hash) % fs_table_size.
  */
 int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -348,7 +435,7 @@ void rehash_all(fs_file_t* cur) {
 
 	if (cur->parent != NULL) {
 		// Rehash the current file and put it back in the table:
-		cur->hash = (cur->parent->hash + hash(cur->name)) % fs_table_size;
+		cur->hash = hash(cur->name, cur->parent->hash) % fs_table_size;
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -379,25 +466,58 @@ void expand_table(void) {
  ****************************************************/
 
 /**
- * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
- * @param name  : the name of the new file.
- * @param is_dir: whether the new file is a directory or not.
- * @param parent: a pointer to the new file's parent.
+ * Initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+inline void fs__init(void) {
+	fs_table_files = 0;
+	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
+	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
+	fs_root        = fs__new((int*)&FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
+}
+
+/**
+ * Destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+inline void fs__exit(void) {
+	while (fs_root->content.l_child != NULL)
+		fs__del(&fs_root->content.l_child);
+
+	free(fs_root);
+	free(fs_table);
+}
+
+/**
+ * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children; expand the hash table if necessary, calculating the updated hash.
+ * @param new_hash: pointer to the hash of the new file.
+ * @param new_name: the name of the new file.
+ * @param is_dir  : whether the new file is a directory or not.
+ * @param parent  : a pointer to the new file's parent.
  * @ret   a pointer to the new file.
  * @pre   all the checks before the creation have already been made.
- * @post  the new file is now the head of the list of children starting at parent->content.l_child.
+ * @post  the new file is now the head of the list of children starting at parent->content.l_child; if the hash table is expanded during the creation, *new_hash now contains the updated hash.
  */
-fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
+fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
 	// Before creating a new file, expand the hash table if the maximum load coefficent has been exceeded:
-	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
+	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD) {
 		expand_table();
+		// And recalcualte the hash after expanding the table:
+		*new_hash = hash(new_name, parent->hash) % fs_table_size;
+		*new_hash = linear_probe(*new_hash, new_name, parent, true);
+	}
 
+	// Create the new file:
 	new             = malloc_or_die(sizeof(fs_file_t));
+	new->name       = malloc_or_die(strlen(new_name) + 1);
+	new->hash       = *new_hash;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
 	new->parent     = parent;
+	new->l_sibling  = NULL;
+	strcpy(new->name, new_name);
 
 	if (is_dir)
 		new->content.l_child = NULL;
@@ -406,23 +526,10 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 
 	// If we are creating the root:
 	if (parent == NULL) {
-		// Its hash is FS_ROOT_HASH:
-		new->hash      = FS_ROOT_HASH;
-		// Its name is FS_ROOT_NAME
-		new->name      = FS_ROOT_NAME;
-		// And it hasn't got siblings.
-		new->l_sibling = NULL;
+		// It hasn't got right siblings.
 		new->r_sibling = NULL;
 	} else {
-		// Otherwise calculate the new file's hash:
-		new->hash      = (parent->hash + hash(name)) % fs_table_size;
-		new->hash      = linear_probe(new->hash, name, parent, true);
-		// Use the provided name as the new file's name:
-		new->name      = malloc_or_die(strlen(name) + 1);
-		strcpy(new->name, name);
-
-		// And insert the new file in the head of the list of children of its parent:
-		new->l_sibling = NULL;
+		// Otherwise add the new file to its parent's list of siblings:
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
 			new->r_sibling->l_sibling = new;
@@ -443,7 +550,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
  * @post  if new is true, a new file is created in the table cell identified by the path.
  */
 fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
-	fs_file_t* parent;
+	fs_file_t *parent, *new_file;
 	register unsigned short depth;
 	char *cur_name, *next_name;
 	int cur_hash;
@@ -462,7 +569,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 			return NULL;
 
 		// Otherwise, check if the current directory actually exists:
-		cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+		cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		// If it doesn't exist:
@@ -488,7 +595,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		return NULL;
 
 	// Otherwise look for the requested file (or the new cell where it has to be created):
-	cur_hash = (parent->hash + hash(cur_name)) % fs_table_size;
+	cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	// If the requested cell doesn't exist:
@@ -496,12 +603,15 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		// Stop here, can't do anything.
 		return NULL;
 
+	// If we are looking for an empty cell in the hash table for a new file:
 	if (new) {
-		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, parent);
+		// Create the new file in the cell:
+		new_file = fs__new(&cur_hash, cur_name, new_is_dir, parent);
+		fs_table[cur_hash] = new_file;
 		fs_table_files++;
 	}
 
-	// And return the cell we found:
+	// Return the cell we found:
 	return fs_table + cur_hash;
 }
 
@@ -640,6 +750,22 @@ int fs__cmp(const void* a, const void* b) {
  ****************************************************/
 
 /**
+ * Nothing but a wrapper of fs__init: initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+void fs_init(void) {
+	fs__init();
+}
+
+/**
+ * Nothing but a wrapper of fs__exit: destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs_exit(void) {
+	fs__exit();
+}
+
+/**
  * Create a file represented by the given path.
  * @param path  : the path representing the file to be created.
  * @param is_dir: whether the file to be created is a directory or not.
@@ -677,7 +803,7 @@ void fs_delete(char* path, bool recursive) {
 	victim = fs__get(path, false, false);
 
 	// If the cell actually contains a valid file:
-	if (victim != NULL && *victim != FS_DELETED && *victim != NULL) {
+	if (victim != NULL && *victim != NULL) {
 		// And if either we have to delete recursively or the victim has no children:
 		if (recursive || (*victim)->n_children == 0) {
 			// Get the address of the previous tree node pointer and procede with the deletion:
@@ -778,16 +904,4 @@ void fs_find(const char* name) {
 	}
 
 	printf(RESULT_FAILURE"\n");
-}
-
-/**
- * Destroy the whole filesystem tree (including root) and free all the space.
- * @post the whole filesystem tree and hashtable have been freed.
- */
-void fs_exit(void) {
-	while (fs_root->content.l_child != NULL)
-		fs__del(&fs_root->content.l_child);
-
-	free(fs_root);
-	free(fs_table);
 }

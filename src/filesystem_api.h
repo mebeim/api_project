@@ -1,9 +1,41 @@
+/**
+ * File  : filesystem_api.h
+ * Author: Marco Bonelli
+ * Date  : 2017-07-20
+ *
+ * Copyright (c) 2017 Marco Bonelli.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef API_PROJECT_FS_API_INCLUDED
 #define API_PROJECT_FS_API_INCLUDED
 
 #define RESULT_SUCCESS      "ok"
 #define RESULT_READ_SUCCESS "contenuto"
 #define RESULT_FAILURE      "no"
+
+/**
+ * Nothing but a wrapper of fs__init: initialize the hash table and create the root.
+ * @post the hash table has been allocated in memory and the root has been created.
+ */
+void fs_init(void);
+
+/**
+ * Nothing but a wrapper of fs__exit: destroy the whole filesystem tree (including root) and free all the space.
+ * @post the whole filesystem tree and hashtable have been freed.
+ */
+void fs_exit(void);
 
 /**
  * Create a file represented by the given path.
@@ -45,11 +77,5 @@ void fs_write(char* path, const char* data);
  * @out   RESULT_SUCCESS followed by the full path of the matching file, one line per match, sorted lexicographically, in case of success; RESULT_ERROR if no file with the given name is found.
  */
 void fs_find(const char* name);
-
-/**
- * Destroy the whole filesystem tree (including root) and free all the space.
- * @post the whole filesystem tree and hashtable have been freed.
- */
-void fs_exit(void);
 
 #endif
