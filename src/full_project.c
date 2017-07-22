@@ -1,7 +1,7 @@
 /**
  * Subject: SimpleFS - Final test project
  * Author : Marco Bonelli
- * Date   : 2017-07-19
+ * Date   : 2017-07-22
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
@@ -69,17 +69,17 @@ static inline uint64_t cread_u64 (const void* const);
 static inline uint64_t cread_u32 (const void* const);
 static inline uint64_t cread_u16 (const void* const);
 static inline uint64_t cread_u8  (const void* const);
-			  
+
 /* Hash & hash table functions */
-unsigned long hash         (const char*, const unsigned long);
-int           linear_probe (size_t, const char*, const fs_file_t*, bool);
-void          rehash_all   (fs_file_t*);
-void          expand_table (void);
+size_t hash         (const char*, const unsigned long);
+int    linear_probe (size_t, const char*, const fs_file_t*, bool);
+void   rehash_all   (fs_file_t*);
+void   expand_table (void);
 
 /* Filesystem helpers */
 void        fs__init (void);
 void        fs__exit (void);
-fs_file_t*  fs__new  (char*, bool, fs_file_t*);
+fs_file_t*  fs__new  (int*, char*, bool, fs_file_t*);
 fs_file_t** fs__get  (char*, bool, bool);
 fs_file_t** fs__all  (fs_file_t*, const char*, size_t*);
 char*       fs__uri  (fs_file_t*, size_t);
@@ -101,7 +101,7 @@ void fs_find   (const char*);
 
 fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
-size_t     const FS_ROOT_HASH      = 0;
+int        const FS_ROOT_HASH      = 0;
 char*      const FS_ROOT_NAME      = "#";
 
 fs_file_t** fs_table;
@@ -151,7 +151,10 @@ int main(void) {
 				break;
 
 			case COMMAND_WRITE:
-				str = strtok(NULL, "\"");
+				str = strtok(NULL, "\r\n");
+				str = strchr(str, '"');
+				str = strtok(str, "\"");
+
 				fs_write(arg, str);
 				break;
 
@@ -310,7 +313,7 @@ static inline uint64_t cread_u8 (const void* const ptr) {
  * @param seed: the seed (wow who would've guessed that).
  * @ret   the computed hash.
  */
-unsigned long hash(const char* key, const unsigned long seed) {
+size_t hash(const char* key, const unsigned long seed) {
 	const uint8_t *ukey, *ptr;
 	uint64_t h, len, v[4], v0, v1;
 	static const uint64_t k0 = 0xC83A91E1;
@@ -370,7 +373,7 @@ unsigned long hash(const char* key, const unsigned long seed) {
 	}
 
 	if ((end - ptr) >= 1) {
-		h += cread_u8(ptr) * k3;
+		h += cread_u8 (ptr) * k3;
 		h ^= crotate_r(h, 25) * k1;
 	}
 
@@ -378,7 +381,7 @@ unsigned long hash(const char* key, const unsigned long seed) {
 	h *= k0;
 	h ^= crotate_r(h, 33);
 
-	return (unsigned long)h;
+	return (size_t)h;
 }
 
 /**
@@ -470,7 +473,7 @@ inline void fs__init(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new(NULL, true, NULL);
+	fs_root        = fs__new((int*)&FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
 }
 
 /**
@@ -486,25 +489,35 @@ inline void fs__exit(void) {
 }
 
 /**
- * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children.
- * @param name  : the name of the new file.
- * @param is_dir: whether the new file is a directory or not.
- * @param parent: a pointer to the new file's parent.
+ * Create a new file, initialize it according to the given parameters and insert it in the list of its parent's children; expand the hash table if necessary, calculating the updated hash.
+ * @param new_hash: pointer to the hash of the new file.
+ * @param new_name: the name of the new file.
+ * @param is_dir  : whether the new file is a directory or not.
+ * @param parent  : a pointer to the new file's parent.
  * @ret   a pointer to the new file.
  * @pre   all the checks before the creation have already been made.
- * @post  the new file is now the head of the list of children starting at parent->content.l_child.
+ * @post  the new file is now the head of the list of children starting at parent->content.l_child; if the hash table is expanded during the creation, *new_hash now contains the updated hash.
  */
-fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
+fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
 	// Before creating a new file, expand the hash table if the maximum load coefficent has been exceeded:
-	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
+	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD) {
 		expand_table();
+		// And recalcualte the hash after expanding the table:
+		*new_hash = hash(new_name, parent->hash) % fs_table_size;
+		*new_hash = linear_probe(*new_hash, new_name, parent, true);
+	}
 
+	// Create the new file:
 	new             = malloc_or_die(sizeof(fs_file_t));
+	new->name       = malloc_or_die(strlen(new_name) + 1);
+	new->hash       = *new_hash;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
 	new->parent     = parent;
+	new->l_sibling  = NULL;
+	strcpy(new->name, new_name);
 
 	if (is_dir)
 		new->content.l_child = NULL;
@@ -513,23 +526,10 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 
 	// If we are creating the root:
 	if (parent == NULL) {
-		// Its hash is FS_ROOT_HASH:
-		new->hash      = FS_ROOT_HASH;
-		// Its name is FS_ROOT_NAME
-		new->name      = FS_ROOT_NAME;
-		// And it hasn't got siblings.
-		new->l_sibling = NULL;
+		// It hasn't got right siblings.
 		new->r_sibling = NULL;
 	} else {
-		// Otherwise calculate the new file's hash:
-		new->hash      = hash(name, parent->hash) % fs_table_size;
-		new->hash      = linear_probe(new->hash, name, parent, true);
-		// Use the provided name as the new file's name:
-		new->name      = malloc_or_die(strlen(name) + 1);
-		strcpy(new->name, name);
-
-		// And insert the new file in the head of the list of children of its parent:
-		new->l_sibling = NULL;
+		// Otherwise add the new file to its parent's list of siblings:
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
 			new->r_sibling->l_sibling = new;
@@ -550,7 +550,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
  * @post  if new is true, a new file is created in the table cell identified by the path.
  */
 fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
-	fs_file_t* parent;
+	fs_file_t *parent, *new_file;
 	register unsigned short depth;
 	char *cur_name, *next_name;
 	int cur_hash;
@@ -603,12 +603,15 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		// Stop here, can't do anything.
 		return NULL;
 
+	// If we are looking for an empty cell in the hash table for a new file:
 	if (new) {
-		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, parent);
+		// Create the new file in the cell:
+		new_file = fs__new(&cur_hash, cur_name, new_is_dir, parent);
+		fs_table[cur_hash] = new_file;
 		fs_table_files++;
 	}
 
-	// And return the cell we found:
+	// Return the cell we found:
 	return fs_table + cur_hash;
 }
 
