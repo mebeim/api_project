@@ -1,0 +1,20 @@
+create_dir /x
+
+	create_dir /x/x
+
+
+
+
+
+			create_dir /x/x/x
+
+create_dir 	    /x/x/x/x
+create_dir      /x/x/x/x/x
+create_dir          /x/x/x/x/x/x
+
+create 		/x/x/x/x/x/x/x	   
+write /x/x/x/x/x/x/x 	  "hello world"	
+read /x/x/x/x/x/x/x
+
+
+exit
