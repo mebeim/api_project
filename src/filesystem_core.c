@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_core.c
  * Author: Marco Bonelli
- * Date  : 2017-07-20
+ * Date  : 2017-07-22
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -108,7 +108,7 @@ inline void fs__init(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new(NULL, true, NULL);
+	fs_root        = fs__new(FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
 }
 
 inline void fs__exit(void) {
@@ -119,16 +119,21 @@ inline void fs__exit(void) {
 	free(fs_table);
 }
 
-fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
+fs_file_t* fs__new(int new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
 	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD)
 		expand_table();
 
 	new             = malloc_or_die(sizeof(fs_file_t));
+	new->name       = malloc_or_die(strlen(new_name) + 1);
+	new->hash       = new_hash;
 	new->is_dir     = is_dir;
 	new->n_children = 0;
 	new->parent     = parent;
+	new->l_sibling  = NULL;
+
+	strcpy(new->name, new_name);
 
 	if (is_dir)
 		new->content.l_child = NULL;
@@ -136,17 +141,8 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 		new->content.data = calloc_or_die(1, sizeof(char));
 
 	if (parent == NULL) {
-		new->hash      = FS_ROOT_HASH;
-		new->name      = FS_ROOT_NAME;
-		new->l_sibling = NULL;
 		new->r_sibling = NULL;
 	} else {
-		new->hash      = hash(name, parent->hash) % fs_table_size;
-		new->hash      = linear_probe(new->hash, name, parent, true);
-		new->name      = malloc_or_die(strlen(name) + 1);
-		strcpy(new->name, name);
-
-		new->l_sibling = NULL;
 		new->r_sibling = parent->content.l_child;
 		if (new->r_sibling != NULL)
 			new->r_sibling->l_sibling = new;
@@ -159,7 +155,7 @@ fs_file_t* fs__new(char* name, bool is_dir, fs_file_t* parent) {
 }
 
 fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
-	fs_file_t* parent;
+	fs_file_t *new_file, *parent;
 	register unsigned short depth;
 	char *cur_name, *next_name;
 	int cur_hash;
@@ -200,7 +196,8 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		return NULL;
 
 	if (new) {
-		fs_table[cur_hash] = fs__new(cur_name, new_is_dir, parent);
+		new_file = fs__new(cur_hash, cur_name, new_is_dir, parent);
+		fs_table[cur_hash] = new_file;
 		fs_table_files++;
 	}
 
