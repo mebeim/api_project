@@ -1,7 +1,7 @@
 /**
  * File  : hash.c
  * Author: Marco Bonelli
- * Date  : 2017-07-20
+ * Date  : 2017-07-22
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -50,7 +50,7 @@ static inline uint64_t cread_u8 (const void* const ptr) {
  *						PUBLIC						*
  ****************************************************/
 
-unsigned long hash(const char* key, const unsigned long seed) {
+size_t hash(const char* key, const unsigned long seed) {
 	const uint8_t *ukey, *ptr;
 	uint64_t h, len, v[4], v0, v1;
 	static const uint64_t k0 = 0xC83A91E1;
@@ -118,5 +118,5 @@ unsigned long hash(const char* key, const unsigned long seed) {
 	h *= k0;
 	h ^= crotate_r(h, 33);
 
-	return (unsigned long)h;
+	return (size_t)h;
 }

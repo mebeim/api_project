@@ -1,7 +1,7 @@
 /**
  * File  : hash.h
  * Author: Marco Bonelli
- * Date  : 2017-07-20
+ * Date  : 2017-07-22
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -27,6 +27,6 @@
  * @param seed: the seed (wow who would've guessed that).
  * @ret   the computed hash.
  */
-unsigned long hash(const char* key, const unsigned long seed);
+size_t hash(const char* key, const unsigned long seed);
 
 #endif
