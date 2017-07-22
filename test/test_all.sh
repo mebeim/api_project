@@ -27,16 +27,13 @@ for f in input/*.in; do
 	((i++))
 	fname=$(basename ${f%.in})
 
-	printf "[%d/%d] File \"%s\"... " $i $n $f
-	out=$(../build/simplefs < input/$fname.in | diff output/$fname.out -)
+	printf "[%2d/%2d] File \"%s\"... " $i $n $f
+	../build/simplefs < input/$fname.in | cmp --quiet output/$fname.out -
 
 	if [ $? -eq 0 ]; then
 		printf "OK.\n"
 	else
-		printf "ERROR!\n\n"
-		printf "Output from diff:\n"
-		printf "%s\n\n" "$out"
-		printf "Testing failed! :(\n"
+		printf "ERROR!\n\nTesting failed! :(\n"
 		exit 1
 	fi
 done

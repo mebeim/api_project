@@ -34,7 +34,7 @@
 #define COMMAND_EXIT   'e'
 
 int main(void) {
-	char *line, *cmd, *arg, *str;
+	char *line, *cmd, *arg, *str, *tmp;
 	int chars_read;
 	bool done;
 
@@ -71,7 +71,10 @@ int main(void) {
 				break;
 
 			case COMMAND_WRITE:
-				str = strtok(NULL, "\"");
+				tmp = strtok(NULL, "\r\n");
+				tmp = strchr(tmp, '"');
+				str = strtok(tmp, "\"");
+
 				fs_write(arg, str);
 				break;
 
