@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_core.c
  * Author: Marco Bonelli
- * Date  : 2017-07-22
+ * Date  : 2017-07-24
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -31,8 +31,8 @@
 
 static fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 static float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
-static int        const FS_ROOT_HASH      = 0;
-static char*      const FS_ROOT_NAME      = "#";
+static size_t     const FS_ROOT_HASH      = 0;
+static size_t     const FS_HASH_ERROR     = (size_t) -1;
 
 /**
  * Scan the table from a start index until a valid cell is found.
@@ -40,10 +40,10 @@ static char*      const FS_ROOT_NAME      = "#";
  * @param key   : file name to match which was used as key to produce the initial hash.
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
- * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
+ * @ret   index of the wanted cell in the table, FS_HASH_ERROR if it doesn't exist.
  * @pre   start has been created as start = hash(key, parent->hash) % fs_table_size.
  */
-static int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
+static size_t linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
 
 	h = start;
@@ -51,7 +51,7 @@ static int linear_probe(size_t start, const char* key, const fs_file_t* parent, 
 	if (new) {
 		while (fs_table[h] != NULL && fs_table[h] != FS_DELETED) {
 			if (fs_table[h]->parent == parent && strcmp(fs_table[h]->name, key) == 0)
-				return -1;
+				return FS_HASH_ERROR;
 			h = (h + 1) % fs_table_size;
 		}
 	} else {
@@ -59,10 +59,10 @@ static int linear_probe(size_t start, const char* key, const fs_file_t* parent, 
 			h = (h + 1) % fs_table_size;
 
 		if (fs_table[h] == NULL)
-			return -1;
+			return FS_HASH_ERROR;
 	}
 
-	return (int)h;
+	return h;
 }
 
 /**
@@ -108,7 +108,7 @@ inline void fs__init(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new((int*)&FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
+	fs_root        = fs__new((size_t*)&FS_ROOT_HASH, "", true, NULL);
 }
 
 inline void fs__exit(void) {
@@ -119,7 +119,7 @@ inline void fs__exit(void) {
 	free(fs_table);
 }
 
-fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
+fs_file_t* fs__new(size_t* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
 	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD) {
@@ -161,7 +161,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	fs_file_t *new_file, *parent;
 	register unsigned short depth;
 	char *cur_name, *next_name;
-	int cur_hash;
+	size_t cur_hash;
 
 	depth     = 0;
 	parent    = fs_root;
@@ -176,7 +176,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
-		if (cur_hash == -1)
+		if (cur_hash == FS_HASH_ERROR)
 			return NULL;
 
 		depth++;
@@ -195,7 +195,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	cur_hash = hash(cur_name, parent->hash) % fs_table_size;
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
-	if (cur_hash == -1)
+	if (cur_hash == FS_HASH_ERROR)
 		return NULL;
 
 	if (new) {
