@@ -1,7 +1,7 @@
 /**
  * Subject: SimpleFS - Final test project
  * Author : Marco Bonelli
- * Date   : 2017-07-24
+ * Date   : 2017-07-28
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
@@ -152,8 +152,10 @@ int main(void) {
 
 			case COMMAND_WRITE:
 				str = strtok(NULL, "\r\n");
-				str = strchr(str, '"');
-				str = strtok(str, "\"");
+				if (str != NULL) {
+					str = strchr(str, '"');
+					str = strtok(str, "\"");
+				}
 
 				fs_write(arg, str);
 				break;
@@ -561,8 +563,8 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	next_name = strtok(NULL, "/");
 	cur_hash  = FS_ROOT_HASH;
 
-	// While the parent exists, we're not at the last file name in the path and we didn't reach the maximum filesystem depth:
-	while (parent != NULL && next_name != NULL && depth < MAX_FILESYSTEM_DEPTH) {
+	// While we're not at the last file name in the path:
+	while (next_name != NULL) {
 		// If the parent hasn't got children:
 		if (parent->n_children == 0)
 			// The directory we're looking for certainly doesn't exist.
@@ -586,10 +588,9 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 
 	// If the path wasn't well formatted or the parent doesn't exist or is not a directory...
 	if (   cur_name == NULL
-	    || parent  == NULL
 	    || !parent->is_dir
 	    // ... or we are creating a new file exceeding the children limit or the maximum depth, or we are looking for a file when the parent has no children...
-	    || !((new  && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
+	    || !((new && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
 	)
 		// Stop here, can't do anything.
 		return NULL;
@@ -775,15 +776,13 @@ void fs_exit(void) {
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
 
-	if (*path) {
-		// Try to create the new file:
-		new_file = fs__get(path, true, is_dir);
+	// Try to create the new file:
+	new_file = fs__get(path, true, is_dir);
 
-		// If the new file has been successfully created:
-		if (new_file != NULL) {
-			printf(RESULT_SUCCESS"\n");
-			return;
-		}
+	// If the new file has been successfully created:
+	if (new_file != NULL) {
+		printf(RESULT_SUCCESS"\n");
+		return;
 	}
 
 	printf(RESULT_FAILURE"\n");
@@ -803,7 +802,7 @@ void fs_delete(char* path, bool recursive) {
 	victim = fs__get(path, false, false);
 
 	// If the cell actually contains a valid file:
-	if (victim != NULL && *victim != NULL) {
+	if (victim != NULL) {
 		// And if either we have to delete recursively or the victim has no children:
 		if (recursive || (*victim)->n_children == 0) {
 			// Get the address of the previous tree node pointer and procede with the deletion:
@@ -832,7 +831,7 @@ void fs_read(char* path) {
 	file = fs__get(path, false, false);
 
 	// If the file actually exists and is not a directory, read its content:
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		printf(RESULT_READ_SUCCESS" %s\n", (*file)->content.data);
 		return;
 	}
@@ -855,7 +854,7 @@ void fs_write(char* path, const char* data) {
 	file = fs__get(path, false, false);
 
 	// If the file actually exists and is not a directory, write its content:
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		free((*file)->content.data);
 		data_len = strlen(data);
 		(*file)->content.data = malloc_or_die(data_len + 1);
@@ -879,8 +878,10 @@ void fs_find(const char* name) {
 	char** paths;
 	size_t n;
 
-	// Get all the files that match the given name:
-	found = fs__all(fs_root, name, &n);
+	n = 0;
+	if (name != NULL)
+		// Get all the files that match the given name:
+		found = fs__all(fs_root, name, &n);
 
 	if (n > 0) {
 		paths = malloc_or_die(sizeof(char*) * n);
