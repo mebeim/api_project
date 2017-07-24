@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_core.h
  * Author: Marco Bonelli
- * Date  : 2017-07-22
+ * Date  : 2017-07-24
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -43,7 +43,7 @@ struct fs_file_s {
 
 fs_file_t** fs_table;
 fs_file_t*  fs_root;
-unsigned    fs_table_files;
+size_t      fs_table_files;
 size_t      fs_table_size;
 
 /**
