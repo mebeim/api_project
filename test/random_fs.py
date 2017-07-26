@@ -2,7 +2,7 @@
 
 # File  : random_fs.py
 # Author: Marco Bonelli
-# Date  : 2017-07-25
+# Date  : 2017-07-26
 #
 # Copyright (c) 2017 Marco Bonelli.
 #
@@ -65,7 +65,7 @@ ap = argparse.ArgumentParser(
 )
 
 ap.add_argument("-o", action = "store_true", help = "generate expected result from SimpleFS instead of random input; this will output N \"ok\" lines and thus every option except -n will be ignored")
-ap.add_argument("-n", type = positive, default = 100000, help = "number of files to be created")
+ap.add_argument("-n", type = positive, default = 10000, help = "number of files to be created")
 ap.add_argument("-f", type = positive, default = 255, help = "maximum file name length")
 ap.add_argument("-e", action = "store_true", help = "use F as the exact length, not maximum")
 ap.add_argument("-w", type = positive, default = 1024, help = "maximum number of children per directory")
