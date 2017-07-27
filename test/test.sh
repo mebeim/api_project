@@ -28,28 +28,32 @@ function test_random {
 	res=0
 	tot=0
 
-	printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
-	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-	printf ": working on it...\n"
+	if [ $PRETTYPRINT -eq 1 ]; then
+		printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
+		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+		printf ": working on it...\n"
+	fi
 
 	for i in $(seq 1 $2); do
-		./random_fs.py -n $1 > dummy_in
-		./random_fs.py -n $1 -o	> dummy_expected
+		./random_fs.py -n $1 > .dummy_in
+		./random_fs.py -n $1 -o	> .dummy_expected
 
 		tstart=$(date +%s%6N)
-		../build/simplefs < dummy_in > dummy_out
+		../build/simplefs < .dummy_in > .dummy_out
 		tend=$(date +%s%6N)
 
 		dt=$((tend - tstart))
 		tot=$((tot + dt))
 		avg=$(bc <<< "scale=3; ${tot}/${i}/1000")
 
-		goback 1
-		printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
-		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-		printf ": %9.3fms (avg) [%3d/%-3d]...\n" $avg $i $2
+		if [ $PRETTYPRINT -eq 1 ]; then
+			goback 1
+			printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
+			(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+			printf ": %9.3fms (avg) [%3d/%-3d]...\n" $avg $i $2
+		fi
 
-		cmp --quiet dummy_out dummy_expected
+		cmp --quiet .dummy_out .dummy_expected
 		res=$?
 
 		if [ $res -ne 0 ]; then
@@ -57,12 +61,15 @@ function test_random {
 		fi
 	done
 
-	rm dummy_*
+	rm .dummy_*
 
-	goback 1
+	if [ $PRETTYPRINT -eq 1 ]; then
+		goback 1
+	fi
+
 	printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
 	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-	printf ": %9.3fms (avg) [%3d/%-3d]" $avg $2 $2
+	printf ": %9.3fms (avg) [%3d/%-3d]" $avg $i $2
 
 	if [ $res -eq 0 ]; then
 		printf " -> OK.\n"
@@ -76,26 +83,31 @@ function test_file {
 	spacing=$((24 - ${#1}))
 	fname=$(basename ${f%.in})
 
-	printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
-	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-	printf ": working on it...\n"
+	if [ $PRETTYPRINT -eq 1 ]; then
+		printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
+		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+		printf ": working on it...\n"
+	fi
 
 	tstart=$(date +%s%6N)
-	../build/simplefs < input/$fname.in > dummy_out
+	../build/simplefs < input/$fname.in > .dummy_out
 	tend=$(date +%s%6N)
 
 	dt=$((tend - tstart))
 	dt=$(bc <<< "scale=3; ${dt}/1000")
 
-	goback 1
+	if [ $PRETTYPRINT -eq 1 ]; then
+		goback 1
+	fi
+
 	printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
 	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
 	printf ": %6.3fms" $dt
 
-	cmp --quiet dummy_out output/$fname.out
+	cmp --quiet .dummy_out output/$fname.out
 	res=$?
 
-	rm dummy_out
+	rm .dummy_out
 
 	if [ $res -eq 0 ]; then
 		printf " -> OK.\n"
@@ -104,6 +116,9 @@ function test_file {
 		exit 1
 	fi
 }
+
+[ "$CI" = "true" ] && [ "$TRAVIS" = "true" ]
+PRETTYPRINT=$?
 
 printf "Running all test files:\n"
 
@@ -116,6 +131,7 @@ for f in input/*.in; do
 done
 
 printf "\nRunning random tests:\n"
+
 test_random 10 100 1 5
 test_random 100 10 2 5
 test_random 1000 10 3 5
