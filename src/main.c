@@ -1,7 +1,7 @@
 /**
  * File  : main.c
  * Author: Marco Bonelli
- * Date  : 2017-07-20
+ * Date  : 2017-07-27
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -72,8 +72,10 @@ int main(void) {
 
 			case COMMAND_WRITE:
 				str = strtok(NULL, "\r\n");
-				str = strchr(str, '"');
-				str = strtok(str, "\"");
+				if (str != NULL) {
+					str = strchr(str, '"');
+					str = strtok(str, "\"");
+				}
 
 				fs_write(arg, str);
 				break;
