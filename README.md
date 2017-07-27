@@ -32,13 +32,13 @@ Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
 Testing
 -------
 
-You can either test using `make` and specifying the `simplefs_test` target:
+After building, you can either test using `make` and specifying the `simplefs_test` target:
 
     ~/api_project/build$ make simplefs_test
 
 Or directly calling the test script:
 
-    ~/api_project/test$ ./test_all.sh
+    ~/api_project/test$ ./test.sh
 
 -----------------------------------------------------------------------------
 
