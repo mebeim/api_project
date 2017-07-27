@@ -104,7 +104,9 @@ void fs_find(const char* name) {
 	char** paths;
 	size_t n;
 
-	found = fs__all(fs_root, name, &n);
+	n = 0;
+	if (name != NULL)
+		found = fs__all(fs_root, name, &n);
 
 	if (n > 0) {
 		paths = malloc_or_die(sizeof(char*) * n);
