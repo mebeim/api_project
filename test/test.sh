@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# File  : test_all.sh
+# File  : test.sh
 # Author: Marco Bonelli
 # Date  : 2017-07-27
 #
