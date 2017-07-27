@@ -23,6 +23,42 @@ function goback {
 	tput cuu $1 && tput el
 }
 
+function test_file {
+	spacing=$((24 - ${#1}))
+	fname=$(basename ${f%.in})
+
+	if [ $PRETTYPRINT -eq 1 ]; then
+		printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
+		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+		printf ": working on it...\n"
+	fi
+
+	tstart=$(date +%s%6N)
+	../build/simplefs < input/$fname.in > $TMPDIR/dummy_out
+	tend=$(date +%s%6N)
+
+	dt=$((tend - tstart))
+	dt=$(bc <<< "scale=3; ${dt}/1000")
+
+	if [ $PRETTYPRINT -eq 1 ]; then
+		goback 1
+	fi
+
+	printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
+	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+	printf ": %6.3fms" $dt
+
+	cmp --quiet $TMPDIR/dummy_out output/$fname.out
+	res=$?
+
+	if [ $res -eq 0 ]; then
+		printf " -> OK.\n"
+	else
+		printf " -> ERROR!\n\nTesting failed! :(\n"
+		exit 1
+	fi
+}
+
 function test_random {
     spacing=$((7 - ${#1} - ${#2}))
 	res=0
@@ -35,11 +71,11 @@ function test_random {
 	fi
 
 	for i in $(seq 1 $2); do
-		./random_fs.py -n $1 > .dummy_in
-		./random_fs.py -n $1 -o	> .dummy_expected
+		./random_fs.py -n $1 > $TMPDIR/dummy_in
+		./random_fs.py -n $1 -o	> $TMPDIR/dummy_expected
 
 		tstart=$(date +%s%6N)
-		../build/simplefs < .dummy_in > .dummy_out
+		../build/simplefs < $TMPDIR/dummy_in > $TMPDIR/dummy_out
 		tend=$(date +%s%6N)
 
 		dt=$((tend - tstart))
@@ -53,15 +89,13 @@ function test_random {
 			printf ": %9.3fms (avg) [%3d/%-3d]...\n" $avg $i $2
 		fi
 
-		cmp --quiet .dummy_out .dummy_expected
+		cmp --quiet $TMPDIR/dummy_out $TMPDIR/dummy_expected
 		res=$?
 
 		if [ $res -ne 0 ]; then
 			break
 		fi
 	done
-
-	rm .dummy_*
 
 	if [ $PRETTYPRINT -eq 1 ]; then
 		goback 1
@@ -79,46 +113,9 @@ function test_random {
 	fi
 }
 
-function test_file {
-	spacing=$((24 - ${#1}))
-	fname=$(basename ${f%.in})
-
-	if [ $PRETTYPRINT -eq 1 ]; then
-		printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
-		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-		printf ": working on it...\n"
-	fi
-
-	tstart=$(date +%s%6N)
-	../build/simplefs < input/$fname.in > .dummy_out
-	tend=$(date +%s%6N)
-
-	dt=$((tend - tstart))
-	dt=$(bc <<< "scale=3; ${dt}/1000")
-
-	if [ $PRETTYPRINT -eq 1 ]; then
-		goback 1
-	fi
-
-	printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
-	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-	printf ": %6.3fms" $dt
-
-	cmp --quiet .dummy_out output/$fname.out
-	res=$?
-
-	rm .dummy_out
-
-	if [ $res -eq 0 ]; then
-		printf " -> OK.\n"
-	else
-		printf " -> ERROR!\n\nTesting failed! :(\n"
-		exit 1
-	fi
-}
-
 [ "$CI" = "true" ] && [ "$TRAVIS" = "true" ]
 PRETTYPRINT=$?
+TMPDIR=$(mktemp -d)
 
 printf "Running all test files:\n"
 
@@ -137,5 +134,7 @@ test_random 100 10 2 5
 test_random 1000 10 3 5
 test_random 10000 5 4 5
 test_random 100000 1 5 5
+
+rm -r $TMPDIR
 
 printf "\nTesting succeded! :)\n"
