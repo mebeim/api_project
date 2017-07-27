@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_api.c
  * Author: Marco Bonelli
- * Date  : 2017-07-20
+ * Date  : 2017-07-27
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -36,13 +36,11 @@ void fs_exit(void) {
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
 
-	if (*path) {
-		new_file = fs__get(path, true, is_dir);
+	new_file = fs__get(path, true, is_dir);
 
-		if (new_file != NULL) {
-			printf(RESULT_SUCCESS"\n");
-			return;
-		}
+	if (new_file != NULL) {
+		printf(RESULT_SUCCESS"\n");
+		return;
 	}
 
 	printf(RESULT_FAILURE"\n");
