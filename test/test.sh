@@ -93,27 +93,41 @@ function test_random {
 	fi
 }
 
+if [ "$1" == "all" ] || [ "$1" == "files" ] || [ "$1" == "random" ]; then
+	TESTS=$1
+else
+	TESTS="all"
+fi
+
 export LC_NUMERIC="en_US.UTF-8"
 TMPDIR=$(mktemp -d)
 
-printf "Running all test files:\n"
+if [ "$TESTS" == "all" ] || [ "$TESTS" == "files" ]; then
+	printf "Running all test files:\n"
 
-i=0
-n=$(ls input -1 | wc -l)
+	i=0
+	n=$(ls input -1 | wc -l)
 
-for f in input/*.in; do
-	((i++))
-	test_file $f $i $n
-done
+	for f in input/*.in; do
+		((i++))
+		test_file $f $i $n
+	done
 
-printf "\nRunning random tests:\n"
+	printf "\n"
+fi
 
-test_random 10 100 1 5
-test_random 100 10 2 5
-test_random 1000 10 3 5
-test_random 10000 5 4 5
-test_random 100000 1 5 5
+if [ "$TESTS" == "all" ] || [ "$TESTS" == "random" ]; then
+	printf "Running random tests:\n"
+
+	test_random 10 100 1 5
+	test_random 100 10 2 5
+	test_random 1000 10 3 5
+	test_random 10000 5 4 5
+	test_random 100000 1 5 5
+
+	printf "\n"
+fi
 
 rm -r $TMPDIR
 
-printf "\nTesting succeded! :)\n"
+printf "Testing succeded! :)\n"

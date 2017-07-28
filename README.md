@@ -22,8 +22,8 @@ Building
 
 Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
 
-	~$ git clone https://github.com/mebeim/api_project.git
-	~$ cd api_project
+    ~$ git clone https://github.com/mebeim/api_project.git
+    ~$ cd api_project
     ~/api_project$ mkdir build
     ~/api_project$ cd build
     ~/api_project/build$ cmake ..
@@ -36,9 +36,15 @@ After building, you can either test using `make` and specifying the `simplefs_te
 
     ~/api_project/build$ make simplefs_test
 
-Or directly calling the test script:
+Or directly calling the test script, which also accepts the options:
 
-    ~/api_project/test$ ./test.sh
+ - `files` to only run the test files in the `/test/input` folder and compare them with the expected outputs in `/test/output`;
+ - `random` to only run randomly generated (`create`/`create_dir` only) test files (see [`/test/random_fs.py`][5] for more information);
+ - `all`, which is the default if no option is specified, to run both files and random tests.
+
+    ~/api_project/test$ ./test.sh all
+    ~/api_project/test$ ./test.sh files
+    ~/api_project/test$ ./test.sh random
 
 -----------------------------------------------------------------------------
 
@@ -48,3 +54,4 @@ Or directly calling the test script:
  [2]: https://github.com/mebeim/api_project/blob/master/LICENSE
  [3]: https://github.com/mebeim/api_project/blob/master/doc/About.md
  [4]: https://github.com/mebeim/api_project/tree/master/doc
+ [5]: https://github.com/mebeim/api_project/blob/master/test/random_fs.py
