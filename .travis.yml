@@ -2,6 +2,10 @@ os: linux
 dist: trusty
 language: c
 compiler: gcc
+addons:
+  apt:
+    packages:
+      - gdb
 git:
   depth: 1
 script:
