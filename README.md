@@ -38,9 +38,10 @@ After building, you can either test using `make` and specifying the `simplefs_te
 
 Or directly calling the test script, which also accepts the options:
 
- - `files` to only run the test files in the `/test/input` folder and compare them with the expected outputs in `/test/output`;
- - `random` to only run randomly generated (`create`/`create_dir` only) test files (see [`/test/random_fs.py`][5] for more information);
- - `all`, which is the default if no option is specified, to run both files and random tests.
+ - `files` to only run the test files (`/test/input` comparing with `/test/output`);
+ - `random` to only run randomly generated test files (see [`/test/random_fs.py`][5] for more info);
+ - `all` to run both files and random tests, which is the default.
+
 
     ~/api_project/test$ ./test.sh all
     ~/api_project/test$ ./test.sh files
