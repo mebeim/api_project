@@ -7,20 +7,21 @@ run
 break malloc
 continue
 return (void*) 0
+del 2
 continue
 print $_exitcode
-del 2
 run
 break calloc
 continue
 return (void*) 0
+del 3
 continue
 print $_exitcode
-del 3
 run <<< "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 break realloc
 continue
 return (void *) 0
+del 4
 continue
 print $_exitcode
 quit
