@@ -18,6 +18,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+function fail {
+	printf " -> ERROR!\n\nTesting failed! :(\n"
+	rm -r $TMPDIR
+	exit 1
+}
+
 function test_file {
 	spacing=$((24 - ${#1}))
 	fname=$(basename ${f%.in})
@@ -43,8 +49,7 @@ function test_file {
 	if [ $res -eq 0 ]; then
 		printf " -> OK.\n"
 	else
-		printf " -> ERROR!\n\nTesting failed! :(\n"
-		exit 1
+		fail
 	fi
 }
 
@@ -88,19 +93,61 @@ function test_random {
 	if [ $res -eq 0 ]; then
 		printf " -> OK.\n"
 	else
-		printf " -> ERROR!\n\nTesting failed! :(\n"
-		exit 1
+		fail
 	fi
 }
 
-if [ "$1" == "all" ] || [ "$1" == "files" ] || [ "$1" == "random" ]; then
+if [ "$1" == "exit" ] || [ "$1" == "files" ] || [ "$1" == "random" ]; then
 	TESTS=$1
 else
-	TESTS="all"
+	if [ "$1" == "all" ] || [ -z "$1"]; then
+		TESTS="all"
+	else
+		printf "Usage: %s [all|exit|files|random]\n" $0
+		printf "Error: unsuppported option: \"%s\".\n" $1
+		exit 1
+	fi
 fi
 
 export LC_NUMERIC="en_US.UTF-8"
 TMPDIR=$(mktemp -d)
+
+if [ "$TESTS" == "all" ] || [ "$TESTS" == "exit" ]; then
+	printf "Running abnormal exit tests...\r"
+
+	cp test_exit_gdb.in $TMPDIR/gdb_in
+	sed -i "s|_LOGFILE_|$TMPDIR/gdb_out|g" $TMPDIR/gdb_in
+
+	gdb -q -batch ../build/simplefs -x $TMPDIR/gdb_in
+
+	printf "Running abnormal exit tests:  \n"
+
+	printf "  [1/3] Test exit on failed malloc "
+	grep -q "\$1 = 1" < $TMPDIR/gdb_out
+	if [ $? -eq 0 ]; then
+		printf " -> OK!\n"
+	else
+		fail
+	fi
+
+	printf "  [2/3] Test exit on failed calloc "
+	grep -q "\$2 = 1" < $TMPDIR/gdb_out
+	if [ $? -eq 0 ]; then
+		printf " -> OK!\n"
+	else
+		fail
+	fi
+
+	printf "  [3/3] Test exit on failed realloc"
+	grep -q "\$3 = 1" < $TMPDIR/gdb_out
+	if [ $? -eq 0 ]; then
+		printf " -> OK!\n"
+	else
+		fail
+	fi
+
+	printf "\n"
+fi
 
 if [ "$TESTS" == "all" ] || [ "$TESTS" == "files" ]; then
 	printf "Running all test files:\n"

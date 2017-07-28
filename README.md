@@ -32,7 +32,7 @@ Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
 Testing
 -------
 
-After building, you can either test using `make` and specifying the `simplefs_test` target:
+After building, you can either run *all* tests using `make` and specifying the `simplefs_test` target:
 
     ~/api_project/build$ make simplefs_test
 
@@ -42,17 +42,19 @@ Or directly calling the test script:
 
 The test script also accepts these options as its first argument:
 
+ - `exit` to only run abnormal exit tests;
  - `files` to only run the test files (`/test/input` comparing with `/test/output`);
  - `random` to only run randomly generated test files (see [`/test/random_fs.py`][5] for more info);
- - `all` to run both files and random tests, which is the default.
+ - `all` to run all the tests, which is the default if no option is specified.
 
 So it is possible to run:
 
     ~/api_project/test$ ./test.sh all
+    ~/api_project/test$ ./test.sh exit
     ~/api_project/test$ ./test.sh files
     ~/api_project/test$ ./test.sh random
 
-**Note that** testing generating random files will create very big temporary input files for testing (`> 1GB`).
+**Note that testing generating random files will create very big temporary input files for testing (`> 1GB`) during the execution of the script**.
 
 -----------------------------------------------------------------------------
 
