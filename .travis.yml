@@ -3,15 +3,15 @@ dist: trusty
 language: c
 compiler: gcc
 addons:
-	apt:
-		packages: gdb
+  apt:
+    packages: gdb
 git:
-	depth: 1
+  depth: 1
 script:
-	- mkdir build && cd build
-	- cmake -DCMAKE_BUILD_TYPE=Coverage ..
-	- make simplefs_test
+  - mkdir build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Coverage ..
+  - make simplefs_test
 after_success:
-	- bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash)
 notifications:
-	email: false
+  email: false
