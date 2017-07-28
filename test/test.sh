@@ -93,6 +93,7 @@ function test_random {
 	fi
 }
 
+export LC_NUMERIC="en_US.UTF-8"
 TMPDIR=$(mktemp -d)
 
 printf "Running all test files:\n"
