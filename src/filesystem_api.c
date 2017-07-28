@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_api.c
  * Author: Marco Bonelli
- * Date  : 2017-07-20
+ * Date  : 2017-07-28
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -36,13 +36,11 @@ void fs_exit(void) {
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
 
-	if (*path) {
-		new_file = fs__get(path, true, is_dir);
+	new_file = fs__get(path, true, is_dir);
 
-		if (new_file != NULL) {
-			printf(RESULT_SUCCESS"\n");
-			return;
-		}
+	if (new_file != NULL) {
+		printf(RESULT_SUCCESS"\n");
+		return;
 	}
 
 	printf(RESULT_FAILURE"\n");
@@ -53,7 +51,7 @@ void fs_delete(char* path, bool recursive) {
 
 	victim = fs__get(path, false, false);
 
-	if (victim != NULL && *victim != NULL) {
+	if (victim != NULL) {
 		if (recursive || (*victim)->n_children == 0) {
 			if ((*victim)->l_sibling != NULL)
 				fs__del(&(*victim)->l_sibling->r_sibling);
@@ -73,7 +71,7 @@ void fs_read(char* path) {
 
 	file = fs__get(path, false, false);
 
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		printf(RESULT_READ_SUCCESS" %s\n", (*file)->content.data);
 		return;
 	}
@@ -87,7 +85,7 @@ void fs_write(char* path, const char* data) {
 
 	file = fs__get(path, false, false);
 
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		free((*file)->content.data);
 		data_len = strlen(data);
 		(*file)->content.data = malloc_or_die(data_len + 1);
@@ -106,7 +104,9 @@ void fs_find(const char* name) {
 	char** paths;
 	size_t n;
 
-	found = fs__all(fs_root, name, &n);
+	n = 0;
+	if (name != NULL)
+		found = fs__all(fs_root, name, &n);
 
 	if (n > 0) {
 		paths = malloc_or_die(sizeof(char*) * n);

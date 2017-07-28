@@ -22,8 +22,8 @@ Building
 
 Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
 
-	~$ git clone https://github.com/mebeim/api_project.git
-	~$ cd api_project
+    ~$ git clone https://github.com/mebeim/api_project.git
+    ~$ cd api_project
     ~/api_project$ mkdir build
     ~/api_project$ cd build
     ~/api_project/build$ cmake ..
@@ -32,13 +32,29 @@ Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
 Testing
 -------
 
-You can either test using `make` and specifying the `simplefs_test` target:
+After building, you can either run *all* tests using `make` and specifying the `simplefs_test` target:
 
     ~/api_project/build$ make simplefs_test
 
 Or directly calling the test script:
 
-    ~/api_project/test$ ./test_all.sh
+    ~/api_project/test$ ./test.sh
+
+The test script also accepts these options as its first argument:
+
+ - `exit` to only run abnormal exit tests (**requires `gdb` to be installed**);
+ - `files` to only run the test files (`/test/input` comparing with `/test/output`);
+ - `random` to only run randomly generated test files (see [`/test/random_fs.py`][5] for more info);
+ - `all` to run all the tests, which is the default if no option is specified.
+
+So it is possible to run:
+
+    ~/api_project/test$ ./test.sh all
+    ~/api_project/test$ ./test.sh exit
+    ~/api_project/test$ ./test.sh files
+    ~/api_project/test$ ./test.sh random
+
+**Note that testing generating random files will create very big temporary input files for testing (`> 1GB`) during the execution of the script**.
 
 -----------------------------------------------------------------------------
 
@@ -48,3 +64,4 @@ Or directly calling the test script:
  [2]: https://github.com/mebeim/api_project/blob/master/LICENSE
  [3]: https://github.com/mebeim/api_project/blob/master/doc/About.md
  [4]: https://github.com/mebeim/api_project/tree/master/doc
+ [5]: https://github.com/mebeim/api_project/blob/master/test/random_fs.py

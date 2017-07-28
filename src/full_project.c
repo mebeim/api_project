@@ -1,7 +1,7 @@
 /**
  * Subject: SimpleFS - Final test project
  * Author : Marco Bonelli
- * Date   : 2017-07-22
+ * Date   : 2017-07-28
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
@@ -72,14 +72,14 @@ static inline uint64_t cread_u8  (const void* const);
 
 /* Hash & hash table functions */
 size_t hash         (const char*, const unsigned long);
-int    linear_probe (size_t, const char*, const fs_file_t*, bool);
+size_t linear_probe (size_t, const char*, const fs_file_t*, bool);
 void   rehash_all   (fs_file_t*);
 void   expand_table (void);
 
 /* Filesystem helpers */
 void        fs__init (void);
 void        fs__exit (void);
-fs_file_t*  fs__new  (int*, char*, bool, fs_file_t*);
+fs_file_t*  fs__new  (size_t*, char*, bool, fs_file_t*);
 fs_file_t** fs__get  (char*, bool, bool);
 fs_file_t** fs__all  (fs_file_t*, const char*, size_t*);
 char*       fs__uri  (fs_file_t*, size_t);
@@ -101,12 +101,12 @@ void fs_find   (const char*);
 
 fs_file_t* const FS_DELETED        = (fs_file_t*) -1;
 float      const FS_TABLE_MAX_LOAD = 2.0 / 3.0;
-int        const FS_ROOT_HASH      = 0;
-char*      const FS_ROOT_NAME      = "#";
+size_t     const FS_ROOT_HASH      = 0;
+size_t     const FS_HASH_ERROR     = (size_t) -1;
 
 fs_file_t** fs_table;
 fs_file_t*  fs_root;
-unsigned    fs_table_files;
+size_t      fs_table_files;
 size_t      fs_table_size;
 
 /****************************************************
@@ -152,8 +152,10 @@ int main(void) {
 
 			case COMMAND_WRITE:
 				str = strtok(NULL, "\r\n");
-				str = strchr(str, '"');
-				str = strtok(str, "\"");
+				if (str != NULL) {
+					str = strchr(str, '"');
+					str = strtok(str, "\"");
+				}
 
 				fs_write(arg, str);
 				break;
@@ -390,10 +392,10 @@ size_t hash(const char* key, const unsigned long seed) {
  * @param key   : file name to match which was used as key to produce the initial hash.
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
- * @ret   index of the wanted cell in the table, -1 if it doesn't exist.
+ * @ret   index of the wanted cell in the table, FS_HASH_ERROR if it doesn't exist.
  * @pre   start has been created as start = hash(key, parent->hash) % fs_table_size.
  */
-int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
+size_t linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
 
 	h = start;
@@ -404,7 +406,7 @@ int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool ne
 			// If both name and parent of the file in the current cell match the given ones:
 			if (fs_table[h]->parent == parent && strcmp(fs_table[h]->name, key) == 0)
 				// Then the file we want to create already exists.
-				return -1;
+				return FS_HASH_ERROR;
 			// Otherwise keep going on:
 			h = (h + 1) % fs_table_size;
 		}
@@ -417,11 +419,11 @@ int linear_probe(size_t start, const char* key, const fs_file_t* parent, bool ne
 		// If we stopped because the cell is empty:
 		if (fs_table[h] == NULL)
 			// Then the file we're looking for doesn't exist.
-			return -1;
+			return FS_HASH_ERROR;
 	}
 
 	// If none of the above return statements executed, we found the right cell.
-	return (int)h;
+	return h;
 }
 
 /**
@@ -473,7 +475,7 @@ inline void fs__init(void) {
 	fs_table_files = 0;
 	fs_table_size  = 1024 * 1024 / sizeof(fs_file_t*);
 	fs_table       = malloc_null(fs_table_size, sizeof(fs_file_t*));
-	fs_root        = fs__new((int*)&FS_ROOT_HASH, FS_ROOT_NAME, true, NULL);
+	fs_root        = fs__new((size_t*)&FS_ROOT_HASH, "", true, NULL);
 }
 
 /**
@@ -498,7 +500,7 @@ inline void fs__exit(void) {
  * @pre   all the checks before the creation have already been made.
  * @post  the new file is now the head of the list of children starting at parent->content.l_child; if the hash table is expanded during the creation, *new_hash now contains the updated hash.
  */
-fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
+fs_file_t* fs__new(size_t* new_hash, char* new_name, bool is_dir, fs_file_t* parent) {
 	fs_file_t* new;
 
 	// Before creating a new file, expand the hash table if the maximum load coefficent has been exceeded:
@@ -553,7 +555,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	fs_file_t *parent, *new_file;
 	register unsigned short depth;
 	char *cur_name, *next_name;
-	int cur_hash;
+	size_t cur_hash;
 
 	depth     = 0;
 	parent    = fs_root;
@@ -561,8 +563,8 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	next_name = strtok(NULL, "/");
 	cur_hash  = FS_ROOT_HASH;
 
-	// While the parent exists, we're not at the last file name in the path and we didn't reach the maximum filesystem depth:
-	while (parent != NULL && next_name != NULL && depth < MAX_FILESYSTEM_DEPTH) {
+	// While we're not at the last file name in the path:
+	while (next_name != NULL) {
 		// If the parent hasn't got children:
 		if (parent->n_children == 0)
 			// The directory we're looking for certainly doesn't exist.
@@ -573,7 +575,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		// If it doesn't exist:
-		if (cur_hash == -1)
+		if (cur_hash == FS_HASH_ERROR)
 			// We can't go any further down the path.
 			return NULL;
 
@@ -586,10 +588,9 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 
 	// If the path wasn't well formatted or the parent doesn't exist or is not a directory...
 	if (   cur_name == NULL
-	    || parent  == NULL
 	    || !parent->is_dir
 	    // ... or we are creating a new file exceeding the children limit or the maximum depth, or we are looking for a file when the parent has no children...
-	    || !((new  && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
+	    || !((new && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
 	)
 		// Stop here, can't do anything.
 		return NULL;
@@ -599,7 +600,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	// If the requested cell doesn't exist:
-	if (cur_hash == -1)
+	if (cur_hash == FS_HASH_ERROR)
 		// Stop here, can't do anything.
 		return NULL;
 
@@ -775,15 +776,13 @@ void fs_exit(void) {
 void fs_create(char* path, bool is_dir) {
 	fs_file_t** new_file;
 
-	if (*path) {
-		// Try to create the new file:
-		new_file = fs__get(path, true, is_dir);
+	// Try to create the new file:
+	new_file = fs__get(path, true, is_dir);
 
-		// If the new file has been successfully created:
-		if (new_file != NULL) {
-			printf(RESULT_SUCCESS"\n");
-			return;
-		}
+	// If the new file has been successfully created:
+	if (new_file != NULL) {
+		printf(RESULT_SUCCESS"\n");
+		return;
 	}
 
 	printf(RESULT_FAILURE"\n");
@@ -803,7 +802,7 @@ void fs_delete(char* path, bool recursive) {
 	victim = fs__get(path, false, false);
 
 	// If the cell actually contains a valid file:
-	if (victim != NULL && *victim != NULL) {
+	if (victim != NULL) {
 		// And if either we have to delete recursively or the victim has no children:
 		if (recursive || (*victim)->n_children == 0) {
 			// Get the address of the previous tree node pointer and procede with the deletion:
@@ -832,7 +831,7 @@ void fs_read(char* path) {
 	file = fs__get(path, false, false);
 
 	// If the file actually exists and is not a directory, read its content:
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		printf(RESULT_READ_SUCCESS" %s\n", (*file)->content.data);
 		return;
 	}
@@ -855,7 +854,7 @@ void fs_write(char* path, const char* data) {
 	file = fs__get(path, false, false);
 
 	// If the file actually exists and is not a directory, write its content:
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		free((*file)->content.data);
 		data_len = strlen(data);
 		(*file)->content.data = malloc_or_die(data_len + 1);
@@ -879,8 +878,10 @@ void fs_find(const char* name) {
 	char** paths;
 	size_t n;
 
-	// Get all the files that match the given name:
-	found = fs__all(fs_root, name, &n);
+	n = 0;
+	if (name != NULL)
+		// Get all the files that match the given name:
+		found = fs__all(fs_root, name, &n);
 
 	if (n > 0) {
 		paths = malloc_or_die(sizeof(char*) * n);

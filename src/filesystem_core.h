@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_core.h
  * Author: Marco Bonelli
- * Date  : 2017-07-22
+ * Date  : 2017-07-24
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -43,7 +43,7 @@ struct fs_file_s {
 
 fs_file_t** fs_table;
 fs_file_t*  fs_root;
-unsigned    fs_table_files;
+size_t      fs_table_files;
 size_t      fs_table_size;
 
 /**
@@ -68,7 +68,7 @@ void fs__exit(void);
  * @pre   all the checks before the creation have already been made.
  * @post  the new file is now the head of the list of children starting at parent->content.l_child; if the hash table is expanded during the creation, *new_hash now contains the updated hash.
  */
-fs_file_t* fs__new(int* new_hash, char* new_name, bool is_dir, fs_file_t* parent);
+fs_file_t* fs__new(size_t* new_hash, char* new_name, bool is_dir, fs_file_t* parent);
 
 /**
  * Browse the filesystem following the path and return a pointer to the table cell identified by the path, creating a new file in such cell if requested.
