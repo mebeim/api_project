@@ -30,7 +30,7 @@ del 6
 break realloc
 continue
 del 7
-return (void *) 0
+return (void*) 0
 continue
 print $_exitcode
 quit

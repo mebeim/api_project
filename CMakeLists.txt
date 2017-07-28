@@ -12,7 +12,6 @@ set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 set(CMAKE_C_FLAGS_COVERAGE "-O0 -coverage")
 
-
 # Add libraries
 add_library(utils STATIC "src/utils.c")
 add_library(hash STATIC "src/hash.c")
