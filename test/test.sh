@@ -115,7 +115,7 @@ TMPDIR=$(mktemp -d)
 if [ "$TESTS" == "all" ] || [ "$TESTS" == "exit" ]; then
 	printf "Running abnormal exit tests...\r"
 
-	cp test_exit_gdb.in $TMPDIR/gdb_in
+	cp gdb_test_exit.in $TMPDIR/gdb_in
 	sed -i "s|_LOGFILE_|$TMPDIR/gdb_out|g" $TMPDIR/gdb_in
 
 	gdb -q -batch ../build/simplefs -x $TMPDIR/gdb_in
