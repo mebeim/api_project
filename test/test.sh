@@ -22,11 +22,9 @@ function test_file {
 	spacing=$((24 - ${#1}))
 	fname=$(basename ${f%.in})
 
-	if [ $PRETTYPRINT -eq 1 ]; then
-		printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
-		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-		printf ": working on it...\r"
-	fi
+	printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
+	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+	printf ": working on it...\r"
 
 	tstart=$(date +%s%6N)
 	../build/simplefs < input/$fname.in > $TMPDIR/dummy_out
@@ -55,11 +53,9 @@ function test_random {
 	res=0
 	tot=0
 
-	if [ $PRETTYPRINT -eq 1 ]; then
-		printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
-		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-		printf ": working on it...\r"
-	fi
+	printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
+	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+	printf ": working on it...\r"
 
 	for i in $(seq 1 $2); do
 		./random_fs.py -n $1 > $TMPDIR/dummy_in
@@ -73,11 +69,9 @@ function test_random {
 		tot=$((tot + dt))
 		avg=$(bc <<< "scale=3; ${tot}/${i}/1000")
 
-		if [ $PRETTYPRINT -eq 1 ]; then
-			printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
-			(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-			printf ": %9.3fms (avg) [%3d/%-3d]...\r" $avg $i $2
-		fi
+		printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
+		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
+		printf ": %9.3fms (avg) [%3d/%-3d]...\r" $avg $i $2
 
 		cmp --quiet $TMPDIR/dummy_out $TMPDIR/dummy_expected
 		res=$?
@@ -99,9 +93,6 @@ function test_random {
 	fi
 }
 
-#[ "$CI" = "true" ] && [ "$TRAVIS" = "true" ]
-#PRETTYPRINT=$?
-PRETTYPRINT=1
 TMPDIR=$(mktemp -d)
 
 printf "Running all test files:\n"
