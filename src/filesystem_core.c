@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_core.c
  * Author: Marco Bonelli
- * Date  : 2017-07-24
+ * Date  : 2017-07-28
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -186,7 +186,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	}
 
 	if (   cur_name == NULL
-	    || parent  == NULL
+	    || parent   == NULL
 	    || !parent->is_dir
 	    || !((new  && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
 	)
