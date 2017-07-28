@@ -51,7 +51,7 @@ void fs_delete(char* path, bool recursive) {
 
 	victim = fs__get(path, false, false);
 
-	if (victim != NULL && *victim != NULL) {
+	if (victim != NULL) {
 		if (recursive || (*victim)->n_children == 0) {
 			if ((*victim)->l_sibling != NULL)
 				fs__del(&(*victim)->l_sibling->r_sibling);
@@ -71,7 +71,7 @@ void fs_read(char* path) {
 
 	file = fs__get(path, false, false);
 
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		printf(RESULT_READ_SUCCESS" %s\n", (*file)->content.data);
 		return;
 	}
@@ -85,7 +85,7 @@ void fs_write(char* path, const char* data) {
 
 	file = fs__get(path, false, false);
 
-	if (file != NULL && *file != NULL && !(*file)->is_dir) {
+	if (file != NULL && !(*file)->is_dir) {
 		free((*file)->content.data);
 		data_len = strlen(data);
 		(*file)->content.data = malloc_or_die(data_len + 1);
