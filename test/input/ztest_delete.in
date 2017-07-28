@@ -1,0 +1,11 @@
+create_dir /dir
+create /file
+delete /dir
+delete /file
+create_dir /dir
+create /dir/file
+delete /dir
+delete_r /dir
+delete /nothing
+delete_r /nothing
+exit
