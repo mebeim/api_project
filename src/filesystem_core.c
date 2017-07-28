@@ -169,7 +169,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	next_name = strtok(NULL, "/");
 	cur_hash  = FS_ROOT_HASH;
 
-	while (parent != NULL && next_name != NULL && depth < MAX_FILESYSTEM_DEPTH) {
+	while (next_name != NULL && depth < MAX_FILESYSTEM_DEPTH) {
 		if (parent->n_children == 0)
 			return NULL;
 
@@ -186,9 +186,8 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	}
 
 	if (   cur_name == NULL
-	    || parent   == NULL
 	    || !parent->is_dir
-	    || !((new  && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
+	    || !((new && parent->n_children < MAX_DIRECTORY_CHILDREN && depth < MAX_FILESYSTEM_DEPTH) || (!new && parent->n_children > 0))
 	)
 		return NULL;
 
