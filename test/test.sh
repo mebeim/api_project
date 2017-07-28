@@ -2,7 +2,7 @@
 
 # File  : test.sh
 # Author: Marco Bonelli
-# Date  : 2017-07-27
+# Date  : 2017-07-28
 #
 # Copyright (c) 2017 Marco Bonelli.
 #
@@ -18,11 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-function goback {
-	# Goes $1 lines back in the console output.
-	tput cuu $1 && tput el
-}
-
 function test_file {
 	spacing=$((24 - ${#1}))
 	fname=$(basename ${f%.in})
@@ -30,7 +25,7 @@ function test_file {
 	if [ $PRETTYPRINT -eq 1 ]; then
 		printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
 		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-		printf ": working on it...\n"
+		printf ": working on it...\r"
 	fi
 
 	tstart=$(date +%s%6N)
@@ -40,13 +35,9 @@ function test_file {
 	dt=$((tend - tstart))
 	dt=$(bc <<< "scale=3; ${dt}/1000")
 
-	if [ $PRETTYPRINT -eq 1 ]; then
-		goback 1
-	fi
-
 	printf "  [%2d/%2d] File \"%s\"" $2 $3 $1
 	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-	printf ": %6.3fms" $dt
+	printf ": %7.3fms" $dt
 
 	cmp --quiet $TMPDIR/dummy_out output/$fname.out
 	res=$?
@@ -67,7 +58,7 @@ function test_random {
 	if [ $PRETTYPRINT -eq 1 ]; then
 		printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
 		(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-		printf ": working on it...\n"
+		printf ": working on it...\r"
 	fi
 
 	for i in $(seq 1 $2); do
@@ -83,10 +74,9 @@ function test_random {
 		avg=$(bc <<< "scale=3; ${tot}/${i}/1000")
 
 		if [ $PRETTYPRINT -eq 1 ]; then
-			goback 1
 			printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
 			(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
-			printf ": %9.3fms (avg) [%3d/%-3d]...\n" $avg $i $2
+			printf ": %9.3fms (avg) [%3d/%-3d]...\r" $avg $i $2
 		fi
 
 		cmp --quiet $TMPDIR/dummy_out $TMPDIR/dummy_expected
@@ -96,10 +86,6 @@ function test_random {
 			break
 		fi
 	done
-
-	if [ $PRETTYPRINT -eq 1 ]; then
-		goback 1
-	fi
 
 	printf "  [%d/%d] %d random files (x%d)" $3 $4 $1 $2
 	(($spacing > 0)) && printf ".%.0s" $(seq 1 $spacing)
