@@ -4,27 +4,33 @@ set logging redirect on
 set logging on
 break main
 run
-break fs__new
+break malloc_or_die
 continue
 del 2
 break malloc
 continue
-return (void*) 0
 del 3
+return (void*) 0
 continue
 print $_exitcode
 run
+break calloc_or_die
+continue
+del 4
 break calloc
 continue
+del 5
 return (void*) 0
-del 4
 continue
 print $_exitcode
 run <<< "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+break realloc_or_die
+continue
+del 6
 break realloc
 continue
+del 7
 return (void *) 0
-del 5
 continue
 print $_exitcode
 quit
