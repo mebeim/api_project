@@ -99,8 +99,9 @@ function test_random {
 	fi
 }
 
-[ "$CI" = "true" ] && [ "$TRAVIS" = "true" ]
-PRETTYPRINT=$?
+#[ "$CI" = "true" ] && [ "$TRAVIS" = "true" ]
+#PRETTYPRINT=$?
+PRETTYPRINT=1
 TMPDIR=$(mktemp -d)
 
 printf "Running all test files:\n"
