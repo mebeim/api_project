@@ -42,7 +42,7 @@ Or directly calling the test script:
 
 The test script also accepts these options as its first argument:
 
- - `exit` to only run abnormal exit tests;
+ - `exit` to only run abnormal exit tests (**requires `gdb` to be installed**);
  - `files` to only run the test files (`/test/input` comparing with `/test/output`);
  - `random` to only run randomly generated test files (see [`/test/random_fs.py`][5] for more info);
  - `all` to run all the tests, which is the default if no option is specified.
