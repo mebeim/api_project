@@ -118,7 +118,13 @@ if [ "$TESTS" == "all" ] || [ "$TESTS" == "exit" ]; then
 	cp test_exit_gdb.in $TMPDIR/gdb_in
 	sed -i "s|_LOGFILE_|$TMPDIR/gdb_out|g" $TMPDIR/gdb_in
 
+	ls -lAh $TMPDIR
+	cat $TMPDIR/gdb_in
+
 	gdb -q -batch ../build/simplefs -x $TMPDIR/gdb_in
+
+	ls -lAh $TMPDIR
+	cat $TMPDIR/gdb_out
 
 	printf "Running abnormal exit tests:  \n"
 
