@@ -1,7 +1,7 @@
 /**
  * Subject: SimpleFS - Final test project
  * Author : Marco Bonelli
- * Date   : 2017-07-28
+ * Date   : 2017-07-29
  * Course : Algorithms and principles of computer science [ID:086067]
  * A.Y.   : 2016/2017
  *
@@ -586,7 +586,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		next_name = strtok(NULL, "/");
 	}
 
-	// If the path wasn't well formatted or the parent doesn't exist or is not a directory...
+	// If the path wasn't well formatted or the parent is not a directory...
 	if (   cur_name == NULL
 	    || !parent->is_dir
 	    // ... or we are creating a new file exceeding the children limit or the maximum depth, or we are looking for a file when the parent has no children...

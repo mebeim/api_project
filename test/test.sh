@@ -2,7 +2,7 @@
 
 # File  : test.sh
 # Author: Marco Bonelli
-# Date  : 2017-07-28
+# Date  : 2017-07-29
 #
 # Copyright (c) 2017 Marco Bonelli.
 #
@@ -97,25 +97,8 @@ function test_random {
 	fi
 }
 
-if [ "$1" == "exit" ] || [ "$1" == "files" ] || [ "$1" == "random" ]; then
-	TESTS=$1
-else
-	if [ "$1" == "all" ] || [ -z "$1"]; then
-		TESTS="all"
-	else
-		printf "Usage: %s [all|exit|files|random]\n" $0
-		printf "Error: unsuppported option: \"%s\".\n" $1
-		exit 1
-	fi
-fi
-
-export LC_NUMERIC="en_US.UTF-8"
-TMPDIR=$(mktemp -d)
-
-if [ "$TESTS" == "all" ] || [ "$TESTS" == "exit" ]; then
-	printf "Running abnormal exit tests...\r"
-
-	cp test_exit_gdb.in $TMPDIR/gdb_in
+function test_exit {
+	cp gdb_test_exit.in $TMPDIR/gdb_in
 	sed -i "s|_LOGFILE_|$TMPDIR/gdb_out|g" $TMPDIR/gdb_in
 
 	gdb -q -batch ../build/simplefs -x $TMPDIR/gdb_in
@@ -145,11 +128,44 @@ if [ "$TESTS" == "all" ] || [ "$TESTS" == "exit" ]; then
 	else
 		fail
 	fi
+}
+
+TEST_EXIT=0
+TEST_FILES=0
+TEST_RANDOM=0
+
+if [[ "$*" =~ ^(all|exit|files|random)( +(all|exit|files|random))*$ ]]; then
+	if [[ "$*" =~ all ]]; then
+		TEST_EXIT=1
+		TEST_FILES=1
+		TEST_RANDOM=1
+	fi
+
+	if [[ "$*" =~ exit ]]; then TEST_EXIT=1; fi
+	if [[ "$*" =~ files ]]; then TEST_FILES=1; fi
+	if [[ "$*" =~ random ]]; then TEST_RANDOM=1; fi
+else
+	if [ -z "$*" ]; then
+		TEST_FILES=1
+	else
+		printf "usage: %s [all] [exit] [files] [random]\n" $0
+		printf "error: unsuppported options: \"%s\".\n" $*
+		exit 1
+	fi
+fi
+
+export LC_NUMERIC="en_US.UTF-8"
+TMPDIR=$(mktemp -d)
+
+if [ $TEST_EXIT -eq 1 ]; then
+	printf "Running abnormal exit tests...\r"
+
+	test_exit
 
 	printf "\n"
 fi
 
-if [ "$TESTS" == "all" ] || [ "$TESTS" == "files" ]; then
+if [ $TEST_FILES -eq 1 ]; then
 	printf "Running all test files:\n"
 
 	i=0
@@ -163,8 +179,8 @@ if [ "$TESTS" == "all" ] || [ "$TESTS" == "files" ]; then
 	printf "\n"
 fi
 
-if [ "$TESTS" == "all" ] || [ "$TESTS" == "random" ]; then
-	printf "Running random tests:\n"
+if [ $TEST_RANDOM -eq 1 ]; then
+	printf "Running randomly generated tests:\n"
 
 	test_random 10 100 1 5
 	test_random 100 10 2 5
