@@ -20,7 +20,7 @@ Source and header files contain explicative comments for every defined function,
 Building
 --------
 
-Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
+Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin).
 
     ~$ git clone https://github.com/mebeim/api_project.git
     ~$ cd api_project
@@ -32,29 +32,18 @@ Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin)..
 Testing
 -------
 
-After building, you can either run *all* tests using `make` and specifying the `simplefs_test` target:
+The test script can be run with any combination of the following options:
 
-    ~/api_project/build$ make simplefs_test
+ - `exit` to run abnormal exit tests (**requires `gdb`** to be installed);
+ - `files` to run the test files (`/test/input` and check result with `/test/output`);
+ - `random` to run randomly generated test files (see [`/test/random_fs.py`][5] for more info);
+ - `all` to run all the tests.
 
-Or directly calling the test script:
+The default (if no options are specified) is `files`.
 
-    ~/api_project/test$ ./test.sh
+    ~/api_project/test$ ./test.sh exit files
 
-The test script also accepts these options as its first argument:
-
- - `exit` to only run abnormal exit tests (**requires `gdb` to be installed**);
- - `files` to only run the test files (`/test/input` comparing with `/test/output`);
- - `random` to only run randomly generated test files (see [`/test/random_fs.py`][5] for more info);
- - `all` to run all the tests, which is the default if no option is specified.
-
-So it is possible to run:
-
-    ~/api_project/test$ ./test.sh all
-    ~/api_project/test$ ./test.sh exit
-    ~/api_project/test$ ./test.sh files
-    ~/api_project/test$ ./test.sh random
-
-**Note that testing generating random files will create very big temporary input files for testing (`> 1GB`) during the execution of the script**.
+**Note that testing generating random files will create very big temporary input files (`> 1GB`) during the execution of the script**.
 
 -----------------------------------------------------------------------------
 

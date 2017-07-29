@@ -28,7 +28,7 @@ target_link_libraries(simplefs fsapi fscore hash utils)
 # Testing
 add_custom_target(
 	simplefs_test
-	COMMAND ${CMAKE_SOURCE_DIR}/test/test.sh
+	COMMAND ${CMAKE_SOURCE_DIR}/test/test.sh all
 	DEPENDS simplefs
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test
 )
