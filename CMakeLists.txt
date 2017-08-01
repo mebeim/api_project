@@ -12,7 +12,7 @@ set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 # cmake -DCMAKE_BUILD_TYPE=Release
 set(CMAKE_C_FLAGS_RELEASE "-O2")
-# cmake -DCMAKE_CUILD_TYPE=Coverage
+# cmake -DCMAKE_BUILD_TYPE=Coverage
 set(CMAKE_C_FLAGS_COVERAGE "-O0 -coverage")
 
 # Add libraries
