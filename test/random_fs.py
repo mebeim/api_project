@@ -43,7 +43,7 @@ def check_args(args):
         sys.stderr.write("warning: specified width and number of files are greater than maximum different file names which can be generated; this may result in an incorrent list of commands (or even no list at all)\n")
 
 def random_fname(length):
-	return "".join(random.choice(fname_chars_pool) for i in range(length))
+    return "".join(random.choice(fname_chars_pool) for i in range(length))
 
 def write_commands(node, path):
     for key, item in node.items():
@@ -75,8 +75,8 @@ args = ap.parse_args()
 check_args(args)
 
 if args.o:
-	for i in range(args.n):
-		sys.stdout.write("ok\n")
+    for i in range(args.n):
+        sys.stdout.write("ok\n")
 else:
     fs = dict()
     n = args.n
