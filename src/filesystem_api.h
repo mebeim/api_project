@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_api.h
  * Author: Marco Bonelli
- * Date  : 2017-07-20
+ * Date  : 2017-08-14
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -20,6 +20,8 @@
 
 #ifndef API_PROJECT_FS_API_INCLUDED
 #define API_PROJECT_FS_API_INCLUDED
+
+#include <stdbool.h>
 
 #define RESULT_SUCCESS      "ok"
 #define RESULT_READ_SUCCESS "contenuto"
