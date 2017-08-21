@@ -108,7 +108,7 @@ function test_memory {
 	printf "  [1/3] Test exit on failed malloc "
 	grep -q "\$1 = 1" < $TMPDIR/gdb_out
 	if [ $? -eq 0 ]; then
-		printf " -> OK!\n"
+		printf " -> OK.\n"
 	else
 		fail
 	fi
@@ -116,7 +116,7 @@ function test_memory {
 	printf "  [2/3] Test exit on failed calloc "
 	grep -q "\$2 = 1" < $TMPDIR/gdb_out
 	if [ $? -eq 0 ]; then
-		printf " -> OK!\n"
+		printf " -> OK.\n"
 	else
 		fail
 	fi
@@ -124,7 +124,7 @@ function test_memory {
 	printf "  [3/3] Test exit on failed realloc"
 	grep -q "\$3 = 1" < $TMPDIR/gdb_out
 	if [ $? -eq 0 ]; then
-		printf " -> OK!\n"
+		printf " -> OK.\n"
 	else
 		fail
 	fi
