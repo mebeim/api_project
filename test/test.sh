@@ -97,13 +97,13 @@ function test_random {
 	fi
 }
 
-function test_exit {
-	cp gdb_test_exit.in $TMPDIR/gdb_in
+function test_memory {
+	cp gdb_test_mem_err.in $TMPDIR/gdb_in
 	sed -i "s|_LOGFILE_|$TMPDIR/gdb_out|g" $TMPDIR/gdb_in
 
 	gdb -q -batch ../build/simplefs -x $TMPDIR/gdb_in
 
-	printf "Running abnormal exit tests:  \n"
+	printf "Running memory error tests:  \n"
 
 	printf "  [1/3] Test exit on failed malloc "
 	grep -q "\$1 = 1" < $TMPDIR/gdb_out
@@ -130,25 +130,25 @@ function test_exit {
 	fi
 }
 
-TEST_EXIT=0
+TEST_MEMORY=0
 TEST_FILES=0
 TEST_RANDOM=0
 
-if [[ "$*" =~ ^(all|exit|files|random)( +(all|exit|files|random))*$ ]]; then
+if [[ "$*" =~ ^(all|memory|files|random)( +(all|memory|files|random))*$ ]]; then
 	if [[ "$*" =~ all ]]; then
-		TEST_EXIT=1
+		TEST_MEMORY=1
 		TEST_FILES=1
 		TEST_RANDOM=1
 	fi
 
-	if [[ "$*" =~ exit ]]; then TEST_EXIT=1; fi
+	if [[ "$*" =~ memory ]]; then TEST_MEMORY=1; fi
 	if [[ "$*" =~ files ]]; then TEST_FILES=1; fi
 	if [[ "$*" =~ random ]]; then TEST_RANDOM=1; fi
 else
 	if [ -z "$*" ]; then
 		TEST_FILES=1
 	else
-		printf "usage: %s [all] [exit] [files] [random]\n" $0
+		printf "usage: %s [all] [memory] [files] [random]\n" $0
 		printf "error: unsuppported options: \"%s\".\n" $*
 		exit 1
 	fi
@@ -157,10 +157,10 @@ fi
 export LC_NUMERIC="en_US.UTF-8"
 TMPDIR=$(mktemp -d)
 
-if [ $TEST_EXIT -eq 1 ]; then
-	printf "Running abnormal exit tests...\r"
+if [ $TEST_MEMORY -eq 1 ]; then
+	printf "Running memory error tests...\r"
 
-	test_exit
+	test_memory
 
 	printf "\n"
 fi
