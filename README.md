@@ -10,7 +10,7 @@ This repo contains the final project of my Algorithms and principles of computer
 Source
 ------
 
-The entire project has been split into different header and source files for clarity, but standalone complete source file full of comments ([`src/full_project.c`][1]), which is the one I had to submit for evaluation, is included.
+The entire project has been split into different header and source files for clarity, but a standalone complete source file full of comments ([`src/full_project.c`][1]), which is the one I had to submit for evaluation, is included.
 
 Documentation
 -------------
