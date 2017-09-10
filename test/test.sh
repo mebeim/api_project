@@ -19,9 +19,59 @@
 # limitations under the License.
 
 function fail {
-	printf " -> ERROR!\n\nTesting failed! :(\n"
+	printf "Testing failed! :(\n"
 	rm -r $TMPDIR
 	exit 1
+}
+
+function test_memory {
+	cp gdb_test_mem_err.in $TMPDIR/gdb_in
+	sed -i "s|_LOGFILE_|$TMPDIR/gdb_out|g" $TMPDIR/gdb_in
+
+	gdb -q -batch ../build/simplefs -x $TMPDIR/gdb_in
+
+	printf "Running memory error tests:  \n"
+
+	printf "  [1/3] Test exit on failed malloc "
+	grep -q "\$1 = 1" < $TMPDIR/gdb_out
+	if [ $? -eq 0 ]; then
+		printf " -> OK.\n"
+	else
+		printf " -> ERROR!\n"
+		if [ $FORCE_TESTS -eq 1 ]; then
+			FAILED=1
+		else
+			fail
+		fi
+	fi
+
+	printf "  [2/3] Test exit on failed calloc "
+	grep -q "\$2 = 1" < $TMPDIR/gdb_out
+	if [ $? -eq 0 ]; then
+		printf " -> OK.\n"
+	else
+		printf " -> ERROR!\n"
+		if [ $FORCE_TESTS -eq 1 ]; then
+			FAILED=1
+		else
+			printf "\n"
+			fail
+		fi
+	fi
+
+	printf "  [3/3] Test exit on failed realloc"
+	grep -q "\$3 = 1" < $TMPDIR/gdb_out
+	if [ $? -eq 0 ]; then
+		printf " -> OK.\n"
+	else
+		printf " -> ERROR!\n"
+		if [ $FORCE_TESTS -eq 1 ]; then
+			FAILED=1
+		else
+			printf "\n"
+			fail
+		fi
+	fi
 }
 
 function test_file {
@@ -49,7 +99,13 @@ function test_file {
 	if [ $res -eq 0 ]; then
 		printf " -> OK.\n"
 	else
-		fail
+		printf " -> ERROR!\n"
+		if [ $FORCE_TESTS -eq 1 ]; then
+			FAILED=1
+		else
+			printf "\n"
+			fail
+		fi
 	fi
 }
 
@@ -93,63 +149,40 @@ function test_random {
 	if [ $res -eq 0 ]; then
 		printf " -> OK.\n"
 	else
-		fail
+		printf " -> ERROR!\n"
+		if [ $FORCE_TESTS -eq 1 ]; then
+			FAILED=1
+		else
+			printf "\n"
+			fail
+		fi
 	fi
 }
 
-function test_memory {
-	cp gdb_test_mem_err.in $TMPDIR/gdb_in
-	sed -i "s|_LOGFILE_|$TMPDIR/gdb_out|g" $TMPDIR/gdb_in
-
-	gdb -q -batch ../build/simplefs -x $TMPDIR/gdb_in
-
-	printf "Running memory error tests:  \n"
-
-	printf "  [1/3] Test exit on failed malloc "
-	grep -q "\$1 = 1" < $TMPDIR/gdb_out
-	if [ $? -eq 0 ]; then
-		printf " -> OK.\n"
-	else
-		fail
-	fi
-
-	printf "  [2/3] Test exit on failed calloc "
-	grep -q "\$2 = 1" < $TMPDIR/gdb_out
-	if [ $? -eq 0 ]; then
-		printf " -> OK.\n"
-	else
-		fail
-	fi
-
-	printf "  [3/3] Test exit on failed realloc"
-	grep -q "\$3 = 1" < $TMPDIR/gdb_out
-	if [ $? -eq 0 ]; then
-		printf " -> OK.\n"
-	else
-		fail
-	fi
-}
-
+FAILED=0
+FORCE_TESTS=0
 TEST_MEMORY=0
 TEST_FILES=0
 TEST_RANDOM=0
 
-if [[ "$*" =~ ^(all|memory|files|random)( +(all|memory|files|random))*$ ]]; then
-	if [[ "$*" =~ all ]]; then
-		TEST_MEMORY=1
-		TEST_FILES=1
-		TEST_RANDOM=1
-	fi
-
-	if [[ "$*" =~ memory ]]; then TEST_MEMORY=1; fi
-	if [[ "$*" =~ files ]]; then TEST_FILES=1; fi
-	if [[ "$*" =~ random ]]; then TEST_RANDOM=1; fi
+if [[ "$*" =~ ^force( +(force)?)*$ ]]; then
+	FORCE_TESTS=1
+	TEST_FILES=1
 else
-	if [ -z "$*" ]; then
-		TEST_FILES=1
+	if [[ "$*" =~ ^(force|all|memory|files|random)( +(force|all|memory|files|random))*$ ]]; then
+		if [[ "$*" =~ all ]]; then
+			TEST_MEMORY=1
+			TEST_FILES=1
+			TEST_RANDOM=1
+		fi
+		
+		if [[ "$*" =~ force ]]; then FORCE_TESTS=1; fi
+		if [[ "$*" =~ memory ]]; then TEST_MEMORY=1; fi
+		if [[ "$*" =~ files ]]; then TEST_FILES=1; fi
+		if [[ "$*" =~ random ]]; then TEST_RANDOM=1; fi
 	else
-		printf "usage: %s [all] [memory] [files] [random]\n" $0
-		printf "error: unsuppported options: \"%s\".\n" $*
+		printf "usage: %s [force] [all] [memory] [files] [random]\n" $0
+		printf "error: unsupported option: \"%s\".\n" $*
 		exit 1
 	fi
 fi
@@ -193,4 +226,8 @@ fi
 
 rm -r $TMPDIR
 
-printf "Testing succeded! :)\n"
+if [ $FAILED -eq 1 ]; then
+	fail
+else
+	printf "Testing succeded! :)\n"
+fi
