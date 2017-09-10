@@ -24,12 +24,12 @@ Building
 
 Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin).
 
-    ~$ git clone https://github.com/mebeim/api_project.git
-    ~$ cd api_project
-    ~/api_project$ mkdir build
-    ~/api_project$ cd build
-    ~/api_project/build$ cmake ..
-    ~/api_project/build$ make
+    $ git clone https://github.com/mebeim/api_project.git
+    $ cd api_project
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
 
 Testing
 -------
@@ -40,10 +40,19 @@ The test script can be run with any combination of the following options:
  - `files` to run the test files (`/test/input` and check result with `/test/output`);
  - `random` to run randomly generated test files (see [`/test/random_fs.py`][4] for more info);
  - `all` to run all the tests.
+ - `force` to continue running all tests instead of stopping at the first failure.
 
 The default (if no options are specified) is `files`.
 
-    ~/api_project/test$ ./test.sh memory files
+	$ ./test.sh Open the pod bay doors, HAL.
+	usage: ./test.sh [force] [all] [memory] [files] [random]
+	error: unsupported option: "Open".
+	error: unsupported option: "the".
+	error: unsupported option: "pod".
+	error: unsupported option: "bay".
+	error: unsupported option: "doors,".
+	error: unsupported option: "HAL.".
+
 
 **Note that testing generating random files will create very big temporary input files (`> 1GB`) during the execution of the script**.
 
