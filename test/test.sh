@@ -165,25 +165,29 @@ TEST_MEMORY=0
 TEST_FILES=0
 TEST_RANDOM=0
 
-if [[ "$*" =~ ^force( +(force)?)*$ ]]; then
-	FORCE_TESTS=1
+if [ -z "$*" ]; then
 	TEST_FILES=1
 else
-	if [[ "$*" =~ ^(force|all|memory|files|random)( +(force|all|memory|files|random))*$ ]]; then
-		if [[ "$*" =~ all ]]; then
-			TEST_MEMORY=1
-			TEST_FILES=1
-			TEST_RANDOM=1
-		fi
-		
-		if [[ "$*" =~ force ]]; then FORCE_TESTS=1; fi
-		if [[ "$*" =~ memory ]]; then TEST_MEMORY=1; fi
-		if [[ "$*" =~ files ]]; then TEST_FILES=1; fi
-		if [[ "$*" =~ random ]]; then TEST_RANDOM=1; fi
+	if [[ "$*" =~ ^force( +(force)?)*$ ]]; then
+		FORCE_TESTS=1
+		TEST_FILES=1
 	else
-		printf "usage: %s [force] [all] [memory] [files] [random]\n" $0
-		printf "error: unsupported option: \"%s\".\n" $*
-		exit 1
+		if [[ "$*" =~ ^(force|all|memory|files|random)( +(force|all|memory|files|random))*$ ]]; then
+			if [[ "$*" =~ all ]]; then
+				TEST_MEMORY=1
+				TEST_FILES=1
+				TEST_RANDOM=1
+			fi
+			
+			if [[ "$*" =~ force ]]; then FORCE_TESTS=1; fi
+			if [[ "$*" =~ memory ]]; then TEST_MEMORY=1; fi
+			if [[ "$*" =~ files ]]; then TEST_FILES=1; fi
+			if [[ "$*" =~ random ]]; then TEST_RANDOM=1; fi
+		else
+			printf "usage: %s [force] [all] [memory] [files] [random]\n" $0
+			printf "error: unsupported option: \"%s\".\n" $*
+			exit 1
+		fi
 	fi
 fi
 
