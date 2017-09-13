@@ -21,7 +21,7 @@ A file is a `struct` containing:
 
 ### The hash table
 
-The hash table representing the filesystem is an array of pointers to files. A barely readapted C version of the MetroHash64 hash function, which takes a string as key and an ptional seed, is used for hashing. Closed hashing with linear probing is used to solve collisions. The initial size of the hash table is 1MiB, which should be large enough to never require an expansion (with consequent rehashing) in most cases, however both expansion and rehashing functions are implemented (and tested) for completeness sake.
+The hash table representing the filesystem is an array of pointers to files. A really silly hash function written by me in maybe 3 minutes, which takes a string as key and an ptional seed, is used for hashing. Closed hashing with linear probing is used to solve collisions. The initial size of the hash table is 1MiB, which should be large enough to never require an expansion (with consequent rehashing) in most cases, however both expansion and rehashing functions are implemented (and tested) for completeness sake.
 
 To maintain every single file of the filesystem in the same hash table, the full path of a file would be a good key to use, but it is not practical to store such a long string for every file: it would consume too much memory. For this reason, each file only stores its name as a partial key, and the hash is calculated "piece by piece" using the parent file's hash as seed, going down the path from the root and looking at each folder's name until reaching the desired file.
 

@@ -1,7 +1,7 @@
 /**
  * File  : filesystem_core.c
  * Author: Marco Bonelli
- * Date  : 2017-07-28
+ * Date  : 2017-09-13
  *
  * Copyright (c) 2017 Marco Bonelli.
  *
@@ -41,7 +41,7 @@ static size_t     const FS_HASH_ERROR     = (size_t) -1;
  * @param parent: file parent to match.
  * @param new   : whether to search for a new (empty) cell or an existing file.
  * @ret   index of the wanted cell in the table, FS_HASH_ERROR if it doesn't exist.
- * @pre   start has been created as start = hash(key, parent->hash) % fs_table_size.
+ * @pre   start has been created as start = hash(key, parent->hash, fs_table_size).
  */
 static size_t linear_probe(size_t start, const char* key, const fs_file_t* parent, bool new) {
 	register size_t h;
@@ -75,7 +75,7 @@ static void rehash_all(fs_file_t* cur) {
 	fs_file_t* child;
 
 	if (cur->parent != NULL) {
-		cur->hash = hash(cur->name, cur->parent->hash) % fs_table_size;
+		cur->hash = hash(cur->name, cur->parent->hash, fs_table_size);
 		cur->hash = linear_probe(cur->hash, cur->name, cur->parent, true);
 		fs_table[cur->hash] = cur;
 	}
@@ -124,7 +124,7 @@ fs_file_t* fs__new(size_t* new_hash, char* new_name, bool is_dir, fs_file_t* par
 
 	if (((float)fs_table_files / (float)fs_table_size) > FS_TABLE_MAX_LOAD) {
 		expand_table();
-		*new_hash = hash(new_name, parent->hash) % fs_table_size;
+		*new_hash = hash(new_name, parent->hash, fs_table_size);
 		*new_hash = linear_probe(*new_hash, new_name, parent, true);
 	}
 
@@ -173,7 +173,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 		if (parent->n_children == 0)
 			return NULL;
 
-		cur_hash = hash(cur_name, parent->hash) % fs_table_size;
+		cur_hash = hash(cur_name, parent->hash, fs_table_size);
 		cur_hash = linear_probe(cur_hash, cur_name, parent, false);
 
 		if (cur_hash == FS_HASH_ERROR)
@@ -191,7 +191,7 @@ fs_file_t** fs__get(char* path, bool new, bool new_is_dir) {
 	)
 		return NULL;
 
-	cur_hash = hash(cur_name, parent->hash) % fs_table_size;
+	cur_hash = hash(cur_name, parent->hash, fs_table_size);
 	cur_hash = linear_probe(cur_hash, cur_name, parent, new);
 
 	if (cur_hash == FS_HASH_ERROR)
