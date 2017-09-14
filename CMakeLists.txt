@@ -1,6 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 project("simplefs" C)
 
+# No need of Cmake reminding us that WIN32 is not defined
+set(CMAKE_LEGACY_CYGWIN_WIN32 0)
+
 # In-source build protection
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt.")

@@ -22,7 +22,7 @@ Source and header files contain explicative comments for every defined function,
 Building
 --------
 
-Required `cmake >= 2.8` (suggested `>= 2.8.4` on Cygwin).
+Required `cmake >= 2.8`.
 
     $ git clone https://github.com/mebeim/api_project.git
     $ cd api_project
