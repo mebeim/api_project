@@ -174,7 +174,11 @@ else
 		TEST_FILES=1
 	else
 		for option in $*; do
-			if   [ "$option" = "force"  ]; then FORCE_TESTS=1;
+			if   [ "$option" = "all" ]; then
+				TEST_MEMORY=1;
+				TEST_FILES=1;
+				TEST_RANDOM=1;
+			elif [ "$option" = "force"  ]; then FORCE_TESTS=1;
 			elif [ "$option" = "memory" ]; then TEST_MEMORY=1;
 			elif [ "$option" = "files"  ]; then TEST_FILES=1;
 			elif [ "$option" = "random" ]; then TEST_RANDOM=1;
