@@ -2,7 +2,7 @@
 
 # File  : test.sh
 # Author: Marco Bonelli
-# Date  : 2017-08-21
+# Date  : 2017-09-14
 #
 # Copyright (c) 2017 Marco Bonelli.
 #
@@ -164,6 +164,7 @@ FORCE_TESTS=0
 TEST_MEMORY=0
 TEST_FILES=0
 TEST_RANDOM=0
+OPTION_ERR=0
 
 if [ -z "$*" ]; then
 	TEST_FILES=1
@@ -172,23 +173,25 @@ else
 		FORCE_TESTS=1
 		TEST_FILES=1
 	else
-		if [[ "$*" =~ ^(force|all|memory|files|random)( +(force|all|memory|files|random))*$ ]]; then
-			if [[ "$*" =~ all ]]; then
-				TEST_MEMORY=1
-				TEST_FILES=1
-				TEST_RANDOM=1
+		for option in $*; do
+			if   [ "$option" = "force"  ]; then FORCE_TESTS=1;
+			elif [ "$option" = "memory" ]; then TEST_MEMORY=1;
+			elif [ "$option" = "files"  ]; then TEST_FILES=1;
+			elif [ "$option" = "random" ]; then TEST_RANDOM=1;
+			else
+				if [ $OPTION_ERR -eq 0 ]; then
+					printf "usage: %s [force] [all] [memory] [files] [random]\n" $0
+					OPTION_ERR=1
+				fi
+				
+				printf "error: unsupported option: \"%s\".\n" $option
 			fi
-			
-			if [[ "$*" =~ force ]]; then FORCE_TESTS=1; fi
-			if [[ "$*" =~ memory ]]; then TEST_MEMORY=1; fi
-			if [[ "$*" =~ files ]]; then TEST_FILES=1; fi
-			if [[ "$*" =~ random ]]; then TEST_RANDOM=1; fi
-		else
-			printf "usage: %s [force] [all] [memory] [files] [random]\n" $0
-			printf "error: unsupported option: \"%s\".\n" $*
-			exit 1
-		fi
+		done
 	fi
+fi
+
+if [ $OPTION_ERR -eq 1 ]; then
+	exit 1
 fi
 
 export LC_NUMERIC="en_US.UTF-8"
