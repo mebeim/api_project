@@ -805,7 +805,7 @@ void fs_find(const char* name) {
 	if (n > 0) {
 		paths = malloc_or_die(sizeof(char*) * n);
 
-		// Geat their full paths:
+		// Get their full paths:
 		for (i = 0; i < n; i++)
 			paths[i] = fs__uri(found[i], 0);
 		free(found);
