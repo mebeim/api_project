@@ -54,7 +54,7 @@ The default (if no options are specified) is `files`.
 	error: unsupported option: "HAL.".
 
 
-**Note that testing generating random files will create very big temporary input files (`> 1GB`) during the execution of the script**.
+**Note that testing generating random files will create very large temporary input files (`> 1GB`) during the execution of the script**.
 
 -----------------------------------------------------------------------------
 
