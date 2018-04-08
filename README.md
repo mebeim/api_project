@@ -60,8 +60,6 @@ The default (if no options are specified) is `files`.
 
 *Copyright &copy; 2017 Marco Bonelli. Licensed under the Apache License 2.0.*
 
- [travis-image]: https://travis-ci.org/mebeim/api_project.svg?branch=master
-
  [1]: https://github.com/mebeim/api_project/blob/master/src/full_project.c
  [2]: https://github.com/mebeim/api_project/blob/master/doc/About.md
  [3]: https://github.com/mebeim/api_project/tree/master/doc
